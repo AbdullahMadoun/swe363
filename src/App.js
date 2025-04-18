@@ -36,6 +36,7 @@ function App(){
 
         <Navbar/>
         <CompareProvider>
+      
         <ComparePage />
         <MainPage/>
       </CompareProvider>
