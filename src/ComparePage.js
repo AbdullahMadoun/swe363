@@ -1,145 +1,237 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+// src/components/ComparePage.jsx
+import React, { useEffect, useContext } from "react";
+import { Plus, X } from "lucide-react";
+import { CompareContext } from "./context/CompareContext";
 
-const styles = {
-  page: {
-    padding: "24px",
-    fontFamily: "sans-serif",
-  },
-  heading: {
-    fontSize: "24px",
-    fontWeight: "bold",
-    marginBottom: "16px",
-  },
-  inputContainer: {
-    display: "flex",
-    gap: "8px",
-    marginBottom: "24px",
-  },
-  input: {
-    border: "1px solid #ccc",
-    padding: "8px",
-    borderRadius: "6px",
-    width: "260px",
-    fontSize: "14px",
-  },
-  button: {
-    backgroundColor: "black",
-    color: "white",
-    padding: "8px 16px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    border: "none",
-  },
-  buttonHover: {
-    backgroundColor: "#333",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "16px",
-  },
-  card: {
-    border: "1px solid #ddd",
-    borderRadius: "12px",
-    padding: "16px",
-    backgroundColor: "#fff",
-    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)",
-  },
-  cardTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    marginBottom: "8px",
-  },
-  cardText: {
-    margin: "4px 0",
-  },
-};
 
-const ComparePage = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [inputId, setInputId] = useState("");
 
-  const getItemById = (id) => {
-    const storedItems = JSON.parse(localStorage.getItem("shopItems")) || [];
-    return storedItems.find((item) => item.itemid === id);
+function ComparePage({ onNavigate = () => {} }) {
+  const { compareItems, addToCompare, removeFromCompare } = useContext(CompareContext);
+
+  // build the grid list:
+  const products = [
+    ...compareItems,
+    { id: "add-placeholder", isAddPlaceholder: true }
+  ];
+
+
+
+  const handleNav = (path) => {
+    onNavigate(path);
+    window.location.href = path;
   };
-
-  const addItemById = (id) => {
-    const existing = selectedItems.find((i) => i.itemid === id);
-    if (existing) return;
-
-    const foundItem = getItemById(id);
-    if (foundItem) {
-      const updatedItems = [...selectedItems, foundItem];
-      setSelectedItems(updatedItems);
-      updateURL(updatedItems);
-    }
-  };
-
-  const updateURL = (items) => {
-    const params = new URLSearchParams();
-    items.forEach((item, index) => {
-      params.set(`item${index + 1}`, item.itemid);
-    });
-    navigate(`/compare?${params.toString()}`);
-  };
-
-  useEffect(() => {
-    const entries = Array.from(searchParams.entries());
-    const ids = entries.map(([, value]) => value);
-    const foundItems = ids
-      .map((id) => getItemById(id))
-      .filter((item) => item !== undefined);
-    setSelectedItems(foundItems);
-  }, [searchParams]);
 
   return (
-    <div style={styles.page}>
-      <h2 style={styles.heading}>Compare Items</h2>
-
-      {/* Input to add new item */}
-      <div style={styles.inputContainer}>
-        <input
-          style={styles.input}
-          type="text"
-          placeholder="Enter item ID (e.g. ram-001)"
-          value={inputId}
-          onChange={(e) => setInputId(e.target.value)}
-        />
-        <button
-          onClick={() => {
-            addItemById(inputId.trim());
-            setInputId("");
-          }}
-          style={styles.button}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor = styles.buttonHover.backgroundColor)
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = styles.button.backgroundColor)
-          }
-        >
-          Add
-        </button>
+    <div style={styles.container}>
+      <div style={styles.productsGrid}>
+        {products.map((p) =>
+          p.isAddPlaceholder ? (
+            <div key={p.id} style={styles.productCard}>
+              <div style={styles.productImage} onClick={() => handleNav("/main")}>
+                <Plus size={32} />
+              </div>
+            </div>
+          ) : (
+            <div key={p.id} style={styles.productCard}>
+              <div style={styles.productImage} onClick={() => addToCompare(p)}>
+                <img
+                  src={p.base64image}
+                  alt={p.title}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              </div>
+              <h3 style={styles.productTitle}>{p.title}</h3>
+              <p style={styles.productPrice}>
+                { p.price
+                }
+              </p>
+            </div>
+          )
+        )}
       </div>
 
-      {/* Comparison Cards */}
-      <div style={styles.grid}>
-        {selectedItems.map((item) => (
-          <div key={item.itemid} style={styles.card}>
-            <h3 style={styles.cardTitle}>{item.title}</h3>
-            <p style={styles.cardText}><strong>Price:</strong> ${item.price}</p>
-            <p style={styles.cardText}><strong>Speed:</strong> {item.speed} MHz</p>
-            <p style={styles.cardText}><strong>Storage:</strong> {item.storage}</p>
-            {/* Add more fields as needed */}
+      {compareItems.length > 0 && (
+        <section style={styles.compareSection}>
+          <p style={styles.compareTitle}>
+            Comparison: {compareItems.map(i => i.title).join(" Vs. ")}
+          </p>
+          <table style={styles.comparisonTable}>
+            <thead>
+              <tr>
+                <th style={styles.tableHeader}></th>
+                {compareItems.map((item) => (
+                  <th key={item.id} style={styles.tableHeader}>
+                    {item.title}
+                    <span
+                      style={styles.removeButton}
+                      onClick={() => removeFromCompare(item.id)}
+                    >
+                      <X size={16} />
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Price", "price"],
+                ["Speed", "speed"],
+                ["Capacity", "capacity"],
+                ["Brand", "brand"],
+                ["Rating", "rating"]
+              ].map(([label, key]) => (
+                <tr key={key} style={styles.tableRow}>
+                  <td style={{ ...styles.tableCell, ...styles.propertyCell }}>
+                    {label}
+                  </td>
+                  {compareItems.map(item => (
+                    <td key={item.id} style={styles.tableCell}>
+                      {item[key] != null ? item[key] : "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={styles.legends}>
+            <span>Legends:</span>
+            <span style={styles.legendIcon}>⭐</span>
+            <span>Add to Compare</span>
           </div>
-        ))}
-      </div>
+        </section>
+      )}
     </div>
   );
-};
+}
 
 export default ComparePage;
+
+const styles = {
+  container: {
+    maxWidth: '72rem',
+    margin: '0 auto',
+    background: 'white',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+    borderRadius: '.5rem',
+    padding: '1rem'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem'
+  },
+  navLinks: {
+    display: 'flex',
+    gap: '1rem'
+  },
+  navLink: {
+    color: '#374151',
+    cursor: 'pointer',
+    transition: 'color .2s'
+  },
+  activeLink: {
+    color: 'black',
+    fontWeight: 500
+  },
+  userProfile: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '.5rem'
+  },
+  userAvatar: {
+    background: '#1f2937',
+    color: 'white',
+    borderRadius: '9999px',
+    width: '2rem',
+    height: '2rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  username: {
+    fontSize: '.875rem',
+    color: '#4b5563'
+  },
+  productsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '1rem',
+    marginBottom: '1.5rem'
+  },
+  productCard: {
+    border: '1px solid #e5e7eb',
+    borderRadius: '.25rem',
+    padding: '1rem',
+    position: 'relative'
+  },
+  productImage: {
+    width: '100%',
+    height: '8rem',
+    background: '#f3f4f6',
+    marginBottom: '1rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer'
+  },
+  productTitle: {
+    fontSize: '.875rem',
+    fontWeight: 500
+  },
+  productPrice: {
+    fontSize: '.875rem',
+    fontWeight: 700,
+    marginTop: '.25rem'
+  },
+  compareSection: {
+    marginTop: '2rem'
+  },
+  compareTitle: {
+    fontSize: '.875rem',
+    color: '#4b5563',
+    marginBottom: '1rem'
+  },
+  comparisonTable: {
+    width: '100%',
+    borderCollapse: 'collapse'
+  },
+  tableHeader: {
+    textAlign: 'left',
+    fontWeight: 500,
+    fontSize: '.875rem',
+    borderBottom: '1px solid #e5e7eb',
+    padding: '.5rem 1rem',
+    position: 'relative'
+  },
+  removeButton: {
+    position: 'absolute',
+    top: '-.5rem',
+    right: '.5rem',
+    color: '#6b7280',
+    cursor: 'pointer',
+    transition: 'color .2s'
+  },
+  tableRow: {
+    borderBottom: '1px solid #e5e7eb'
+  },
+  tableCell: {
+    padding: '.5rem 1rem',
+    fontSize: '.875rem'
+  },
+  propertyCell: {
+    fontWeight: 500,
+    color: '#374151'
+  },
+  legends: {
+    marginTop: '1rem',
+    fontSize: '.75rem',
+    color: '#4b5563',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '.25rem'
+  },
+  legendIcon: {
+    color: '#374151'
+  }
+};

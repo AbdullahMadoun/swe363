@@ -6,7 +6,7 @@ const base64Placeholder = "iVBORw0KGgoAAAANSUhEUgAAAAUA...";
 
 const defaultItems = [
   {
-    itemid: "ram-001",
+    id: "ram-001",
     ownerid: "user123",
     title: "Corsair Vengeance LPX 16GB DDR4",
     price: 43.99,
@@ -19,7 +19,7 @@ const defaultItems = [
     rating: 4.5,
   },
   {
-    itemid: "ram-002",
+    id: "ram-002",
     ownerid: "user123",
     title: "Corsair Vengeance LPX 8GB DDR4",
     price: 29.99,
@@ -32,7 +32,7 @@ const defaultItems = [
     rating: 4.0,
   },
   {
-    itemid: "ram-003",
+    id: "ram-003",
     ownerid: "user456",
     title: "Kingston FURY Beast 16GB DDR4",
     price: 39.99,
@@ -45,7 +45,7 @@ const defaultItems = [
     rating: 3.8,
   },
   {
-    itemid: "ram-004",
+    id: "ram-004",
     ownerid: "user789",
     title: "Kingston FURY Beast 32GB DDR5",
     price: 79.99,
@@ -309,7 +309,7 @@ function MainPage() {
             <p>No items match your criteria.</p>
           ) : (
             sortItems(filteredItems).map((item) => (
-              <ItemCard key={item.itemid} item={item} />
+              <ItemCard  key={item.id} item={{...item }} />
             ))
           )}
         </section>

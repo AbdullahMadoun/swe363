@@ -12,6 +12,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import MainPage from './MainPage.js'
 import PaymentPage from './PaymentPage'
 import ComparePage from './ComparePage.js'
+import React from 'react'
+import { CompareProvider } from './context/CompareContext.js';
+
 
 
 
@@ -32,10 +35,14 @@ function App(){
           </Routes>
 
         <Navbar/>
+        <CompareProvider>
+        <ComparePage />
         <MainPage/>
-        <ComparePage/>
+      </CompareProvider>
       </CartProvider>
+     
     </UserProvider>
+   
     </>
   )
 }
