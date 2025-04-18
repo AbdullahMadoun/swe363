@@ -14,7 +14,8 @@ import PaymentPage from './PaymentPage'
 import ComparePage from './ComparePage.js'
 import React from 'react'
 import { CompareProvider } from './context/CompareContext.js';
-
+import { WishlistProvider } from './context/WishlistContext.js';
+import WishlistPage from './WishlistPage.js'
 
 
 
@@ -27,6 +28,7 @@ function App(){
     <>
  <UserProvider>
       <CartProvider>
+      <WishlistProvider>
         <Routes>    
           <Route path="/cart" element={<ShoppingCartPage />} />
           <Route path="/payment" element={<PaymentPage />} />
@@ -35,11 +37,15 @@ function App(){
           </Routes>
 
         <Navbar/>
+        
+            <WishlistPage/>
+       
         <CompareProvider>
-      
-        <ComparePage />
+     
+   
         <MainPage/>
       </CompareProvider>
+      </WishlistProvider>
       </CartProvider>
      
     </UserProvider>

@@ -1,20 +1,17 @@
 // src/components/ComparePage.jsx
 import React, { useEffect, useContext } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ShoppingCart } from "lucide-react";
 import { CompareContext } from "./context/CompareContext";
-
-
+import { CartContext } from "./CartContext"; // <-- import CartContext
 
 function ComparePage({ onNavigate = () => {} }) {
   const { compareItems, addToCompare, removeFromCompare } = useContext(CompareContext);
+  const { addToCart } = useContext(CartContext); // <-- get addToCart
 
-  // build the grid list:
   const products = [
     ...compareItems,
     { id: "add-placeholder", isAddPlaceholder: true }
   ];
-
-
 
   const handleNav = (path) => {
     onNavigate(path);
@@ -41,10 +38,7 @@ function ComparePage({ onNavigate = () => {} }) {
                 />
               </div>
               <h3 style={styles.productTitle}>{p.title}</h3>
-              <p style={styles.productPrice}>
-                { p.price
-                }
-              </p>
+              <p style={styles.productPrice}>{p.price}</p>
             </div>
           )
         )}
@@ -63,8 +57,16 @@ function ComparePage({ onNavigate = () => {} }) {
                   <th key={item.id} style={styles.tableHeader}>
                     {item.title}
                     <span
+                      style={{ ...styles.iconButton, right: '2rem' }}
+                      onClick={() => addToCart(item)} // <-- add to cart
+                      title="Add to cart"
+                    >
+                      <ShoppingCart size={16} />
+                    </span>
+                    <span
                       style={styles.removeButton}
                       onClick={() => removeFromCompare(item.id)}
+                      title="Remove from compare"
                     >
                       <X size={16} />
                     </span>
@@ -81,9 +83,7 @@ function ComparePage({ onNavigate = () => {} }) {
                 ["Rating", "rating"]
               ].map(([label, key]) => (
                 <tr key={key} style={styles.tableRow}>
-                  <td style={{ ...styles.tableCell, ...styles.propertyCell }}>
-                    {label}
-                  </td>
+                  <td style={{ ...styles.tableCell, ...styles.propertyCell }}>{label}</td>
                   {compareItems.map(item => (
                     <td key={item.id} style={styles.tableCell}>
                       {item[key] != null ? item[key] : "—"}
@@ -114,44 +114,6 @@ const styles = {
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
     borderRadius: '.5rem',
     padding: '1rem'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1.5rem'
-  },
-  navLinks: {
-    display: 'flex',
-    gap: '1rem'
-  },
-  navLink: {
-    color: '#374151',
-    cursor: 'pointer',
-    transition: 'color .2s'
-  },
-  activeLink: {
-    color: 'black',
-    fontWeight: 500
-  },
-  userProfile: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '.5rem'
-  },
-  userAvatar: {
-    background: '#1f2937',
-    color: 'white',
-    borderRadius: '9999px',
-    width: '2rem',
-    height: '2rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  username: {
-    fontSize: '.875rem',
-    color: '#4b5563'
   },
   productsGrid: {
     display: 'grid',
@@ -203,6 +165,14 @@ const styles = {
     borderBottom: '1px solid #e5e7eb',
     padding: '.5rem 1rem',
     position: 'relative'
+  },
+  iconButton: {
+    position: 'absolute',
+    top: '-.5rem',
+    right: '2rem',
+    color: '#6b7280',
+    cursor: 'pointer',
+    transition: 'color .2s'
   },
   removeButton: {
     position: 'absolute',

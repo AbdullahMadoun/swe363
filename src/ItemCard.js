@@ -1,12 +1,14 @@
-import React, { useContext, useState} from "react";
-import { ShoppingCart, BarChart2 } from "lucide-react";
+import React, { useContext, useState } from "react";
+import { ShoppingCart, BarChart2, Heart } from "lucide-react";
 import { CartContext } from "./CartContext";
 import { CompareContext } from "./context/CompareContext";
+import { WishlistContext } from "./context/WishlistContext"; // <-- add this line
 
 function ItemCard({ item }) {
   const { addToCart } = useContext(CartContext);
   const { addToCompare, compareItems } = useContext(CompareContext);
-  
+  const { addToWishlist, removeFromWishlist, wishlist } = useContext(WishlistContext); // <-- and this line
+
   const {
     id,
     title,
@@ -17,7 +19,7 @@ function ItemCard({ item }) {
     speed,
     capacity,
     brand,
-    rating = 0, // <-- fallback to 0 if undefined
+    rating = 0,
   } = item;
 
   const finalPrice = (price * (1 - discount / 100)).toFixed(2);
@@ -32,9 +34,13 @@ function ItemCard({ item }) {
     addToCompare(item);
   };
 
-  // Check if item is already in compare list
-  const isInCompareList = compareItems.some(i => i.id === id);
+  const handleWishlistToggle = () => {
+    const isInWishlist = wishlist.some((i) => i.id === id);
+    isInWishlist ? removeFromWishlist(item) : addToWishlist(item);
+  };
 
+  const isInCompareList = compareItems.some(i => i.id === id);
+  const isInWishlist = wishlist.some(i => i.id === id);
 
   const renderStars = () => {
     const fullStars = Math.floor(rating);
@@ -54,6 +60,8 @@ function ItemCard({ item }) {
     <div style={styles.card}>
       <div style={styles.imageWrapper}>
         <img src={base64image} alt={title} style={styles.image} />
+        
+        {/* Cart Button */}
         <button
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -72,7 +80,7 @@ function ItemCard({ item }) {
         >
           <ShoppingCart size={16} color="#111827" />
         </button>
-        
+
         {/* Compare Button */}
         <button
           onMouseEnter={() => setIsCompareHovered(true)}
@@ -92,6 +100,22 @@ function ItemCard({ item }) {
           <BarChart2 
             size={16} 
             color={isInCompareList ? "#10b981" : "#111827"} 
+          />
+        </button>
+
+        {/* Wishlist Button */}
+        <button
+          onClick={handleWishlistToggle}
+          style={{
+            ...styles.wishlistButton,
+            backgroundColor: "#ffffff",
+            borderColor: "#e5e7eb",
+          }}
+        >
+          <Heart 
+            size={16} 
+            color={isInWishlist ? "#ef4444" : "#9ca3af"} 
+            fill={isInWishlist ? "#ef4444" : "none"} 
           />
         </button>
       </div>
@@ -129,6 +153,7 @@ function ItemCard({ item }) {
     </div>
   );
 }
+
 
 const styles = {
   card: {
@@ -232,6 +257,20 @@ const styles = {
   stars: {
     display: "flex",
     gap: "2px",
+  },
+  wishlistButton: {
+    position: "absolute",
+    top: "10px",
+    right: "90px", // to the left of the compare button
+    padding: "6px",
+    borderRadius: "50%",
+    border: "1px solid #e5e7eb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+    transition: "all 0.2s ease",
+    cursor: "pointer",
   },
 };
 
