@@ -31,6 +31,8 @@ import { ItemProvider } from './context/ItemContext.js';
 import AccountPage from './Admin/AccountPage';
 import PolicyControl from './Admin/PolicyControl';
 import PolicyPage from './Admin/PolicyPage';
+import OrdersPage from './Buyer/OrdersPage.js';
+import ProductDetailPage from './ProductDetailPage.js';
 function App() {
   return (
     <UserProvider>
@@ -43,6 +45,7 @@ function App() {
               <Routes>
                 Buyer Routes
                 <Route path="/" element={<LoginPage  />} />
+                <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/main" element={<MainPage />} />
                 <Route path="/cart" element={<ShoppingCartPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
@@ -50,6 +53,7 @@ function App() {
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route path="/item" element={<ProductDetailPage />} />
                   Add buyer product detail route maybe? /product/:productId
                   {/* Admin Routes */}
                   <Route path="/Admin/accounts" element={<AccountPage />} />

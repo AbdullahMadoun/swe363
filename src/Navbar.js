@@ -62,6 +62,7 @@ function Navbar() {
     { to: "/cart", label: "Cart" },
     { to: "/wishlist", label: "Wishlist" },
     { to: "/policy", label: "Policy"},
+    {to:"/orders", label: "Orders"}
   ];
 
   const sellerLinks = [

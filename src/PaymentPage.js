@@ -1,6 +1,7 @@
 import React from "react";
-
+import { useNavigate } from "react-router-dom";
 const PaymentPage = () => {
+  const navigate = useNavigate();
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -20,7 +21,7 @@ const PaymentPage = () => {
           placeholder="CVV"
           style={styles.input}
         />
-        <button style={styles.button}>Pay</button>
+        <button style={styles.button} onClick = {navigate("/orders")}>Pay</button>
       </div>
     </div>
   );
