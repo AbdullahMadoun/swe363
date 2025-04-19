@@ -2,6 +2,8 @@ import React from 'react';
 import Navbar from './Navbar.js';
 import { Routes, Route } from 'react-router-dom';
 
+import { OrderProvider } from './context/OrderContext'; // Import the new provider
+import MyOrdersPage from './Buyer/MyOrdersPage'; // Import the new page
 // Import Seller Pages
 import MyProductsPage from './Seller/pages/MyProductsPage.js';
 
@@ -45,6 +47,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                   Add buyer product detail route maybe? /product/:productId
+                  <Route path="/my-orders" element={<MyOrdersPage />} />
 
                 {/* --- Seller Routes --- */}
                 <Route
