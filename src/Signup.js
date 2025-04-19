@@ -1,11 +1,12 @@
-import { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "./UserContext";
 import visibilityOff from "./assets/visibility_off.png";
 import visibilityOn from "./assets/visibility_on.png";
-import { Route } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Signup() {
   const { loginUser } = useContext(UserContext);
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -15,6 +16,7 @@ function Signup() {
   const [visible, setVisible] = useState(false);
   const [errorEmail, setErrorEmail] = useState("");
   const [valid, setValid] = useState(true);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const [users, setUsers] = useState(() => {
     const stored = localStorage.getItem("users");
@@ -86,14 +88,33 @@ function Signup() {
       return;
     }
 
-    const newUser = { email, username, password, role };
-    const updatedUsers = [...users, newUser];
+    const newUser = {
+      id: crypto.randomUUID(), // ✅ Added unique ID here
+      email,
+      username,
+      password,
+      role,
+    };
 
+    const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
-
+    localStorage.setItem("loggedInUser", JSON.stringify(newUser));
     loginUser(newUser);
+    setSignupSuccess(true);
   }
+
+  useEffect(() => {
+    if (signupSuccess) {
+      if (role === "Seller") {
+        navigate("/seller/products");
+      } else if (role === "Admin") {
+        navigate("/admin/accounts");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [signupSuccess, role, navigate]);
 
   return (
     <div style={styles.pageWrapper}>
@@ -124,7 +145,9 @@ function Signup() {
               onChange={(e) => setUsername(e.target.value)}
               required
             />
-            <small style={{ color: '#6b7280' }}>This is the name other users sees</small>
+            <small style={{ color: "#6b7280" }}>
+              This is the name other users see
+            </small>
           </div>
 
           <div style={styles.formGroup}>
@@ -165,7 +188,9 @@ function Signup() {
                     color: req.isValid ? "green" : "red",
                   }}
                 >
-                  <span style={{ marginRight: "0.5rem", fontWeight: "bold" }}>
+                  <span
+                    style={{ marginRight: "0.5rem", fontWeight: "bold" }}
+                  >
                     {req.isValid ? "✓" : "✗"}
                   </span>
                   <span>{req.text}</span>
@@ -189,97 +214,113 @@ function Signup() {
           </div>
 
           <button type="submit" style={styles.submitButton} disabled={!valid}>
-            Sign In
+            Sign Up
           </button>
         </form>
       </div>
     </div>
-   
   );
 }
 
 const styles = {
   pageWrapper: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f7fafc",
     minHeight: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    padding: "2rem",
   },
   card: {
     backgroundColor: "#fff",
-    width: "360px",
+    width: "100%",
+    maxWidth: "400px",
     padding: "2rem",
     borderRadius: "8px",
-    boxShadow: "0 4px 6px rgb(0 0 0 / 10%)",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     boxSizing: "border-box",
   },
   heading: {
-    fontSize: "2rem",
+    fontSize: "2.25rem",
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: "1.5rem",
+    marginBottom: "1.75rem",
+    color: "#2d3748",
   },
   formGroup: {
-    marginBottom: "1rem",
+    marginBottom: "1.25rem",
   },
   label: {
     display: "block",
-    marginBottom: "0.5rem",
+    marginBottom: "0.625rem",
     fontWeight: 500,
-    fontSize: "0.95rem",
+    fontSize: "1rem",
+    color: "#4a5568",
   },
   input: {
     width: "100%",
-    padding: "0.5rem",
+    padding: "0.75rem",
     fontSize: "1rem",
-    border: "1px solid #ccc",
+    border: "1px solid #cbd5e0",
     borderRadius: "4px",
     boxSizing: "border-box",
+    color: "#2d3748",
+    backgroundColor: "#edf2f7",
   },
   passwordWrapper: {
     position: "relative",
   },
   passwordInput: {
     width: "100%",
-    padding: "0.5rem",
+    paddingRight: "3rem",
+    padding: "0.75rem",
     fontSize: "1rem",
-    border: "1px solid #ccc",
+    border: "1px solid #cbd5e0",
     borderRadius: "4px",
     boxSizing: "border-box",
+    color: "#2d3748",
+    backgroundColor: "#edf2f7",
   },
   visibilityButton: {
     position: "absolute",
     top: "50%",
-    right: "8px",
+    right: "0.75rem",
     transform: "translateY(-50%)",
     background: "transparent",
     border: "none",
     cursor: "pointer",
-    padding: 0,
+    padding: "0.5rem",
     margin: 0,
   },
   visibilityIcon: {
-    width: "20px",
-    height: "20px",
+    width: "22px",
+    height: "22px",
+    color: "#718096",
   },
   errorText: {
-    color: "#dc2626",
+    color: "#e53e3e",
     fontSize: "0.875rem",
-    margin: "0.25rem 0",
+    marginTop: "0.25rem",
   },
   submitButton: {
     width: "100%",
-    padding: "0.75rem",
-    marginTop: "1rem",
+    padding: "1rem",
+    marginTop: "1.5rem",
     borderRadius: "4px",
     border: "none",
-    fontSize: "1rem",
-    fontWeight: 500,
+    fontSize: "1.125rem",
+    fontWeight: 600,
     cursor: "pointer",
     color: "#fff",
-    backgroundColor: "#111827",
+    backgroundColor: "#2b6cb0",
     boxSizing: "border-box",
+    transition: "background-color 0.2s ease-in-out",
+  },
+  requirementList: {
+    paddingLeft: "1.25rem",
+    marginTop: "0.75rem",
+    fontSize: "0.875rem",
+    color: "#4a5568",
   },
 };
 

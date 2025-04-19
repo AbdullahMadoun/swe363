@@ -59,7 +59,7 @@ function ItemCard({ item }) {
   return (
     <div style={styles.card}>
       <div style={styles.imageWrapper}>
-        <img src={base64image} alt={title} style={styles.image} />
+        <img src={base64image[0]} alt={title} style={styles.image} />
         
         {/* Cart Button */}
         <button

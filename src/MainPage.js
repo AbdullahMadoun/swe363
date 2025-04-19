@@ -1,87 +1,37 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext,useEffect } from "react";
 import ItemCard from "./ItemCard";
 import { CartContext } from "./CartContext";
-
-const base64Placeholder = "iVBORw0KGgoAAAANSUhEUgAAAAUA...";
-
-const defaultItems = [
-  {
-    id: "ram-001",
-    ownerid: "user123",
-    title: "Corsair Vengeance LPX 16GB DDR4",
-    price: 43.99,
-    speed: 3200,
-    stock_quantity: 10,
-    discount: 0,
-    base64image: `data:image/png;base64,${base64Placeholder}`,
-    brand: "Corsair",
-    capacity: "16GB",
-    rating: 4.5,
-  },
-  {
-    id: "ram-002",
-    ownerid: "user123",
-    title: "Corsair Vengeance LPX 8GB DDR4",
-    price: 29.99,
-    speed: 3200,
-    stock_quantity: 5,
-    discount: 10,
-    base64image: `data:image/png;base64,${base64Placeholder}`,
-    brand: "Corsair",
-    capacity: "8GB",
-    rating: 4.0,
-  },
-  {
-    id: "ram-003",
-    ownerid: "user456",
-    title: "Kingston FURY Beast 16GB DDR4",
-    price: 39.99,
-    speed: 3600,
-    stock_quantity: 0,
-    discount: 5,
-    base64image: `data:image/png;base64,${base64Placeholder}`,
-    brand: "Kingston",
-    capacity: "16GB",
-    rating: 3.8,
-  },
-  {
-    id: "ram-004",
-    ownerid: "user789",
-    title: "Kingston FURY Beast 32GB DDR5",
-    price: 79.99,
-    speed: 4800,
-    stock_quantity: 12,
-    discount: 15,
-    base64image: `data:image/png;base64,${base64Placeholder}`,
-    brand: "Kingston",
-    capacity: "32GB",
-    rating: 4.7,
-  },
-];
+import { useItems } from './context/ItemContext';
 
 function MainPage() {
-  const [items, setItems] = useState([]);
+ 
+  const { items } = useItems();
+
+  const { addToCart } = useContext(CartContext);
+
   const [keywords, setKeywords] = useState([]);
   const [input, setInput] = useState("");
-  const { addToCart } = useContext(CartContext);
 
   const [minRating, setMinRating] = useState(false);
   const [freeDelivery, setFreeDelivery] = useState(false);
-  const [brands, setBrands] = useState(["Corsair", "Crucial", "Kingston"]);
-  const [sizes, setSizes] = useState(["8GB", "16GB", "32GB"]);
+
+  const [brands, setBrands] = useState([]);
+  const [sizes, setSizes] = useState([]);
+  const [maxPrice, setMaxPrice] = useState(100); // Default fallback
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [sortOrder, setSortOrder] = useState("price-asc");
 
   useEffect(() => {
-    const storedItems = JSON.parse(localStorage.getItem("shopItems"));
-    if (storedItems && storedItems.length > 0) {
-      setItems(storedItems);
-    } else {
-      setItems(defaultItems);
-      localStorage.setItem("shopItems", JSON.stringify(defaultItems));
-    }
-  }, []);
+    const uniqueBrands = Array.from(
+      new Set(items.map((item) => item.brand).filter(Boolean))
+    );
+    setBrands(uniqueBrands);
 
+    const uniqueSizes = Array.from(
+      new Set(items.map((item) => item.capacity).filter(Boolean))
+    );
+    setSizes(uniqueSizes);
+  }, [items]);
   const addKeyword = (word) => {
     const cleaned = word.trim().toLowerCase();
     if (cleaned && !keywords.includes(cleaned)) {
@@ -89,7 +39,15 @@ function MainPage() {
     }
     setInput("");
   };
-
+  useEffect(() => {
+    if (items.length > 0) {
+      const max = Math.max(...items.map((item) => {
+        const finalPrice = item.price - (item.price * item.discount) / 100;
+        return finalPrice;
+      }));
+      setMaxPrice(Math.ceil(max));
+    }
+  }, [items]);
   const removeKeyword = (word) => {
     setKeywords(keywords.filter((kw) => kw !== word));
   };
@@ -107,20 +65,35 @@ function MainPage() {
   const suggestions = [...new Set(items.map((item) => item.title.toLowerCase().split(" ")).flat())]
     .filter((word) => word.startsWith(input.toLowerCase()) && !keywords.includes(word))
     .slice(0, 5);
+    const filteredItems = items.filter((item) => {
+      const finalPrice = item.price - (item.price * item.discount) / 100;
+      const titleLower = item.title?.toString().toLowerCase() || '';
+    
+      const matchesKeywords =
+        keywords.length === 0 || keywords.every((kw) => titleLower.includes(kw));
+    
+      const matchesRating =
+        !minRating || item.rating >= 4;
 
-  const filteredItems = items.filter((item) => {
-    const finalPrice = item.price - (item.price * item.discount) / 100;
-    const titleLower = item.title.toLowerCase();
-    return (
-      keywords.every((kw) => titleLower.includes(kw)) &&
-      (!minRating || item.rating >= 4) &&
-      (!freeDelivery || item.freeDelivery) &&
-      brands.includes(item.brand) &&
-      sizes.includes(item.capacity) &&
-      finalPrice >= priceRange[0] &&
-      finalPrice <= priceRange[1]
-    );
-  });
+    
+      const matchesBrand =
+        brands.length === 0 || brands.includes(item.brand);
+    
+      const matchesSize =
+        sizes.length === 0 || sizes.includes(item.capacity);
+    
+      const matchesPrice =
+        finalPrice >= priceRange[0] && finalPrice <= priceRange[1];
+    
+      return (
+        matchesKeywords &&
+        matchesRating &&
+        matchesBrand &&
+        matchesSize &&
+        matchesPrice
+      );
+    });
+    
 
   const sortItems = (items) => {
     switch (sortOrder) {
@@ -240,7 +213,7 @@ function MainPage() {
         <input
           type="range"
           min="0"
-          max="100"
+          max={maxPrice}
           value={priceRange[1]}
           onChange={(e) => setPriceRange([0, Number(e.target.value)])}
           style={{ width: "100%" }}
@@ -249,18 +222,18 @@ function MainPage() {
           ${priceRange[0]}–${priceRange[1]}
         </div>
         <label style={{ marginTop: "10px" }}>Brand</label>
-        {["Corsair", "Crucial", "Kingston"].map((brand) => (
+        {brands.map((brand) => (
           <div key={brand} style={styles.checkbox}>
             <input
               type="checkbox"
               checked={brands.includes(brand)}
               onChange={() => toggleBrand(brand)}
-            />
+            />  
             <label>{brand}</label>
           </div>
         ))}
         <label style={{ marginTop: "10px" }}>Size</label>
-        {["8GB", "16GB", "32GB"].map((size) => (
+        {sizes.map((size) => (
           <div key={size} style={styles.checkbox}>
             <input
               type="checkbox"
@@ -309,7 +282,7 @@ function MainPage() {
             <p>No items match your criteria.</p>
           ) : (
             sortItems(filteredItems).map((item) => (
-              <ItemCard  key={item.id} item={{...item }} />
+              <ItemCard key={item.id} item={item} />
             ))
           )}
         </section>
@@ -317,6 +290,8 @@ function MainPage() {
     </div>
   );
 }
+
+
 
 const styles = {
   pageWrapper: {
