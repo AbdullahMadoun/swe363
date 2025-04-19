@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { UserContext } from './UserContext';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-
+import {useNavigate } from 'react-router-dom';
 const Nav = styled.nav`
   background-color: white;
   padding: 10px 30px;
@@ -52,7 +52,12 @@ const LogoutButton = styled.button`
 
 function Navbar() {
   const { user, logout } = useContext(UserContext);
+  const navigate = useNavigate();
 
+  const handleClick = () => {
+    navigate('/some-path');
+  };
+  
   const buyerLinks = [
     { to: "/cart", label: "Cart" },
     { to: "/wishlist", label: "Wishlist" },
@@ -62,7 +67,7 @@ function Navbar() {
   const sellerLinks = [
     { to: "/seller/products", label: "My Products" },
     { to: "/seller/orders", label: "Orders" },
-    { to: "/seller/products/add", label: "Add Product" },
+    { to: "/seller/addproduct", label: "Add Product" },
     { to: "/policy", label: "Policy"},
   ];
 
@@ -79,13 +84,16 @@ function Navbar() {
     if (role === 'admin') return adminLinks;
     return [];
   };
-
+    const logouty = () => { 
+      logout(); 
+      navigate("/");
+    }
   return (
     <Nav>
-      <Logo to="/">TechMart</Logo>
+      <Logo to="/main">TechMart</Logo>
 
       <NavList>
-        {!user || user.role ==="Admin" ? "": <li><NavLink to="/">Home</NavLink></li>}
+        {!user || user.role ==="Admin" ? "": <li><NavLink to="/main">Home</NavLink></li>}
 
         {user ? (
           <>
@@ -94,7 +102,7 @@ function Navbar() {
                 <NavLink to={link.to}>{link.label}</NavLink>
               </li>
             ))}
-            <li><LogoutButton onClick={logout}>Logout</LogoutButton></li>
+            <li><LogoutButton onClick={logouty}>Logout</LogoutButton></li>
           </>
         ) : (
           <>

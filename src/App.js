@@ -42,7 +42,8 @@ function App() {
               <Navbar /> {/* Navbar likely needs UserContext/SellerContext */}
               <Routes>
                 Buyer Routes
-                <Route path="/" element={<MainPage />} />
+                <Route path="/" element={<LoginPage  />} />
+                <Route path="/main" element={<MainPage />} />
                 <Route path="/cart" element={<ShoppingCartPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/compare" element={<ComparePage />} />

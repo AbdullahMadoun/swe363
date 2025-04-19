@@ -111,7 +111,7 @@ function Signup() {
       } else if (role === "Admin") {
         navigate("/admin/accounts");
       } else {
-        navigate("/");
+        navigate("/main");
       }
     }
   }, [signupSuccess, role, navigate]);
