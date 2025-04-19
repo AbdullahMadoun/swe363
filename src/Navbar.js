@@ -80,9 +80,9 @@ function Navbar() {
 
   const getRoleLinks = () => {
     const role = (user?.role || '').toLowerCase();
-    if (role === 'buyer') return buyerLinks;
-    if (role === 'seller') return sellerLinks;
-    if (role === 'admin') return adminLinks;
+    if (role.toLowerCase()  === 'buyer') return buyerLinks;
+    if (role.toLowerCase()  === 'seller') return sellerLinks;
+    if (role.toLowerCase() === 'admin') return adminLinks;
     return [];
   };
     const logouty = () => { 

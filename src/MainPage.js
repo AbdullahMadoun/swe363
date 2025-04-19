@@ -310,6 +310,7 @@ const styles = {
     backgroundColor: "#fafafa",
     marginRight: "20px",
     fontSize: "1rem",
+    accentColor: "black",
   },
   input: {
     width: "100%",
@@ -318,12 +319,14 @@ const styles = {
     borderRadius: "6px",
     border: "1px solid #ccc",
     backgroundColor: "#fff",
+    accentColor: "black",
   },
   checkbox: {
     display: "flex",
     alignItems: "center",
     gap: "8px",
     marginTop: "6px",
+    accentColor: "black",
   },
   topBar: {
     display: "flex",

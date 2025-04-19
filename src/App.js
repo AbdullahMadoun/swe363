@@ -19,7 +19,7 @@ import { SellerProvider } from './context/SellerContext.js'; // Import SellerPro
 
 import MainPage from './MainPage.js'
 import ShoppingCartPage from './ShoppingCartPage.js'
-import PaymentPage from './ShoppingCartPage.js'
+import PaymentPage from './PaymentPage.js'
 import ComparePage from './ComparePage.js'
 import WishlistPage from './WishlistPage.js'
 import LoginPage from './Login.js'
@@ -42,13 +42,16 @@ function App() {
             <ItemProvider>
             <SellerProvider> {/* Wrap relevant parts in SellerProvider */}
               <Navbar /> {/* Navbar likely needs UserContext/SellerContext */}
+              
               <Routes>
                 Buyer Routes
                 <Route path="/" element={<LoginPage  />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/main" element={<MainPage />} />
-                <Route path="/cart" element={<ShoppingCartPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/cart" element={<ShoppingCartPage />} />
+
+                
                 <Route path="/compare" element={<ComparePage />} />
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -66,7 +69,7 @@ function App() {
                     // <ProtectedRoute requiredRole="seller">
           
                     <MyProductsPage />
-                   
+                
                
                     // </ProtectedRoute>
                   }

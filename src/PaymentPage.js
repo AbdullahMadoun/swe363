@@ -2,6 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 const PaymentPage = () => {
   const navigate = useNavigate();
+  function handleD(){ 
+    navigate("/orders");
+  }
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -21,7 +24,7 @@ const PaymentPage = () => {
           placeholder="CVV"
           style={styles.input}
         />
-        <button style={styles.button} onClick = {navigate("/orders")}>Pay</button>
+        <button style={styles.button} onClick = {handleD}>Pay</button>
       </div>
     </div>
   );
