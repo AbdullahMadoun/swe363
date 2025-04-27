@@ -1,5 +1,8 @@
+// src/components/PolicyControl.jsx
 import { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown'; // Make sure to install: npm install react-markdown
+import ReactMarkdown from 'react-markdown';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const styles = {
   container: {
@@ -44,25 +47,39 @@ const styles = {
 
 export default function PolicyControl() {
   const [markdown, setMarkdown] = useState('');
+  const policyRef = doc(db, 'policies', 'policy');
 
-  // Load from localStorage on first render
+  // load from Firestore once on mount
   useEffect(() => {
-    const saved = localStorage.getItem('policyMarkdown');
-    if (saved) setMarkdown(saved);
+    (async () => {
+      try {
+        const snap = await getDoc(policyRef);
+        if (snap.exists()) {
+          setMarkdown(snap.data().markdown || '');
+        }
+      } catch (err) {
+        console.error('Failed to load policy:', err);
+      }
+    })();
   }, []);
 
-  // Save to localStorage
-  const handleApply = () => {
-    localStorage.setItem('policyMarkdown', markdown);
-    alert('Policy saved to localStorage!');
+  // write to Firestore
+  const handleApply = async () => {
+    try {
+      await setDoc(policyRef, { markdown }, { merge: true });
+      alert('Policy saved to Firebase!');
+    } catch (err) {
+      console.error('Failed to save policy:', err);
+      alert('Could not save policy.');
+    }
   };
 
-  // Download as .md file
+  // download as .md
   const handleDownload = () => {
     const blob = new Blob([markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
     a.download = 'policies.md';
     a.click();
     URL.revokeObjectURL(url);
@@ -73,12 +90,17 @@ export default function PolicyControl() {
       <textarea
         style={styles.textarea}
         value={markdown}
-        onChange={(e) => setMarkdown(e.target.value)}
+        onChange={e => setMarkdown(e.target.value)}
         placeholder="Edit your markdown here..."
       />
+
       <div style={styles.buttonGroup}>
-        <button style={styles.button} onClick={handleApply}>Apply</button>
-        <button style={styles.button} onClick={handleDownload}>Download</button>
+        <button style={styles.button} onClick={handleApply}>
+          Apply
+        </button>
+        <button style={styles.button} onClick={handleDownload}>
+          Download
+        </button>
       </div>
 
       <h3>Live Preview</h3>

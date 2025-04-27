@@ -1,113 +1,145 @@
+// src/context/SellerContext.js
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { UserContext } from "../UserContext.js";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import { UserContext } from './UserContext';
 
 export const SellerContext = createContext();
 
-// Helper function to get all products from localStorage
-const getAllProductsFromStorage = () => {
-    const storedProducts = localStorage.getItem("ecommerce_products");
-    return storedProducts ? JSON.parse(storedProducts) : [];
-};
-
-// Helper function to get all orders from localStorage
-const getAllOrdersFromStorage = () => {
-    const storedOrders = localStorage.getItem("ecommerce_orders");
-    return storedOrders ? JSON.parse(storedOrders) : [];
-};
-
-// Helper function to save orders to localStorage
-const saveOrdersToStorage = (orders) => {
-    localStorage.setItem("ecommerce_orders", JSON.stringify(orders));
-};
-
 export function SellerProvider({ children }) {
-    const { user } = useContext(UserContext); // Get the logged-in user
-    const [sellerProducts, setSellerProducts] = useState([]);
-    const [sellerOrders, setSellerOrders] = useState([]);
+  const { user } = useContext(UserContext);
 
-    // Fetch seller-specific data
-    useEffect(() => {
-        if (user && user.role === 'Seller') {
-            const allProducts = getAllProductsFromStorage();
-            const filteredProducts = allProducts.filter(product => product.sellerId === user.id);
-            setSellerProducts(filteredProducts);
+  const [sellerProducts, setSellerProducts] = useState([]);
+  const [sellerOrders, setSellerOrders]     = useState([]);
+  const [isLoading, setIsLoading]           = useState(true);
 
-            const allOrders = getAllOrdersFromStorage();
-            const filteredOrders = allOrders.filter(order => order.sellerId === user.id);
-            setSellerOrders(filteredOrders);
-        } else {
-            setSellerProducts([]);
-            setSellerOrders([]);
-        }
-    }, [user]);
+  // --- realtime subscription to this seller's products ---
+  useEffect(() => {
+    if (!user || user.role !== 'Seller') {
+      setSellerProducts([]);
+      setIsLoading(false);
+      return;
+    }
 
-    // --- Functions to manage products ---
-    const addProduct = (newProductData) => {
-        const newProduct = {
-            ...newProductData,
-            id: `prod_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-            sellerId: user.id
-        };
-        const allProducts = getAllProductsFromStorage();
-        const updatedProducts = [...allProducts, newProduct];
-        localStorage.setItem("ecommerce_products", JSON.stringify(updatedProducts));
-        setSellerProducts(prev => [...prev, newProduct]);
-        return newProduct;
-    };
+    setIsLoading(true);
+    const productsRef = collection(db, 'items');
+    const q           = query(productsRef, where('sellerId', '==', user.id));
 
-    const updateProduct = (productId, updatedData) => {
-        const allProducts = getAllProductsFromStorage();
-        let productUpdated = null;
-        const updatedProducts = allProducts.map(p => {
-            if (p.id === productId && p.sellerId === user.id) {
-                productUpdated = { ...p, ...updatedData };
-                return productUpdated;
-            }
-            return p;
-        });
-        localStorage.setItem("ecommerce_products", JSON.stringify(updatedProducts));
-        if (productUpdated) {
-            setSellerProducts(prev => prev.map(p => p.id === productId ? productUpdated : p));
-        }
-        return productUpdated;
-    };
-
-    const deleteProduct = (productId) => {
-        const allProducts = getAllProductsFromStorage();
-        const updatedProducts = allProducts.filter(p => !(p.id === productId && p.sellerId === user.id));
-        if (updatedProducts.length < allProducts.length) {
-            localStorage.setItem("ecommerce_products", JSON.stringify(updatedProducts));
-            setSellerProducts(prev => prev.filter(p => p.id !== productId));
-            return true;
-        }
-        return false;
-    };
-
-    // --- Functions to manage orders ---
-    const updateOrderStatus = (orderId, newStatus) => {
-        const allOrders = getAllOrdersFromStorage();
-        const updatedOrders = allOrders.map(order =>
-            order.id === orderId && order.sellerId === user.id ? { ...order, status: newStatus } : order
-        );
-        saveOrdersToStorage(updatedOrders);
-        setSellerOrders(prev => prev.map(order => order.id === orderId ? { ...order, status: newStatus } : order));
-    };
-
-    // Function to simulate fetching seller orders (using local storage)
-    const fetchSellerOrders = async () => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const allOrders = getAllOrdersFromStorage();
-                const filteredOrders = allOrders.filter(order => order.sellerId === user.id);
-                setSellerOrders(filteredOrders);
-                resolve();
-            }, 100); // Simulate a short delay
-        });
-    };
-
-    return (
-        <SellerContext.Provider value={{ sellerProducts, sellerOrders, addProduct, updateProduct, deleteProduct, updateOrderStatus, fetchSellerOrders }}>
-            {children}
-        </SellerContext.Provider>
+    const unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setSellerProducts(list);
+        setIsLoading(false);
+      },
+      error => {
+        console.error('Failed to fetch products:', error);
+        setIsLoading(false);
+      }
     );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- realtime subscription to this seller's orders ---
+  useEffect(() => {
+    if (!user || user.role !== 'Seller') {
+      setSellerOrders([]);
+      return;
+    }
+
+    const ordersRef = collection(db, 'orders');
+    const q         = query(ordersRef, where('sellerId', '==', user.id));
+
+    const unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setSellerOrders(list);
+      },
+      error => console.error('Failed to fetch orders:', error)
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- create a new product ---
+  const addProduct = async (newProductData) => {
+    const data = {
+      ...newProductData,
+      sellerId:  user.id,
+      createdAt: serverTimestamp()
+    };
+    const ref = await addDoc(collection(db, 'items'), data);
+    return { id: ref.id, ...data };
+  };
+
+  // --- update an existing product ---
+  const updateProduct = async (productId, updatedData) => {
+    const ref = doc(db, 'products', productId);
+    await updateDoc(ref, updatedData);
+    // local state will refresh via onSnapshot
+  };
+
+  // --- delete a product ---
+  const deleteProduct = async (productId) => {
+    try{
+      const ref = doc(db, 'items', productId);
+      await deleteDoc(ref);
+    }
+    catch (error) {
+      console.error('Error deleting product:', error);
+      return false;
+    }
+
+    return true; 
+    // local state will refresh via onSnapshot
+  };
+
+  // --- change the status of an order ---
+  const updateOrderStatus = async (orderId, newStatus) => {
+    const ref = doc(db, 'orders', orderId);
+    await updateDoc(ref, { status: newStatus });
+    // local state will refresh via onSnapshot
+  };
+
+  // --- one-off fetch of orders (if you ever need it) ---
+  const fetchSellerOrders = async () => {
+    if (!user || user.role !== 'Seller') {
+      setSellerOrders([]);
+      return;
+    }
+    const ordersRef = collection(db, 'orders');
+    const q         = query(ordersRef, where('sellerId', '==', user.uid));
+    const snap      = await getDocs(q);
+    const list      = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setSellerOrders(list);
+  };
+
+  return (
+    <SellerContext.Provider value={{
+      sellerProducts,
+      sellerOrders,
+      isLoading,
+      addProduct,
+      updateProduct,
+      deleteProduct,
+      updateOrderStatus,
+      fetchSellerOrders
+    }}>
+      {children}
+    </SellerContext.Provider>
+  );
 }

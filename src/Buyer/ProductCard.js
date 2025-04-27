@@ -45,7 +45,7 @@ const ProductCard = ({ product, onReviewClick }) => {
       <div style={styles.card}>
         <div style={styles.imageContainer}>
           <img 
-            src={product.image || "/api/placeholder/250/200"} 
+            src={product.images || "/api/placeholder/250/200"} 
             alt={product.name} 
             style={styles.image}
           />

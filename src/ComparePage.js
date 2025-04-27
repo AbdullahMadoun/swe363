@@ -2,7 +2,7 @@
 import React, { useEffect, useContext } from "react";
 import { Plus, X, ShoppingCart } from "lucide-react";
 import { CompareContext } from "./context/CompareContext";
-import { CartContext } from "./CartContext"; // <-- import CartContext
+import { CartContext } from "./context/CartContext"; // <-- import CartContext
 
 function ComparePage({ onNavigate = () => {} }) {
   const { compareItems, addToCompare, removeFromCompare } = useContext(CompareContext);
@@ -32,7 +32,7 @@ function ComparePage({ onNavigate = () => {} }) {
             <div key={p.id} style={styles.productCard}>
               <div style={styles.productImage} onClick={() => addToCompare(p)}>
                 <img
-                  src={p.base64image}
+                  src={p.images}
                   alt={p.title}
                   style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 />

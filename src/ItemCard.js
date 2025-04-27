@@ -1,18 +1,20 @@
+// src/components/ItemCard.js
 import React, { useContext, useState } from "react";
+import { Link } from "react-router-dom";
 import { ShoppingCart, BarChart2, Heart } from "lucide-react";
-import { CartContext } from "./CartContext";
+import { CartContext } from "./context/CartContext";
 import { CompareContext } from "./context/CompareContext";
-import { WishlistContext } from "./context/WishlistContext"; // <-- add this line
+import { WishlistContext } from "./context/WishlistContext";
 
-function ItemCard({ item }) {
+export default function ItemCard({ item }) {
   const { addToCart } = useContext(CartContext);
   const { addToCompare, compareItems } = useContext(CompareContext);
-  const { addToWishlist, removeFromWishlist, wishlist } = useContext(WishlistContext); // <-- and this line
+  const { addToWishlist, removeFromWishlist, wishlist } = useContext(WishlistContext);
 
   const {
     id,
     title,
-    base64image,
+    images,
     price,
     discount,
     stock_quantity,
@@ -26,27 +28,30 @@ function ItemCard({ item }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isCompareHovered, setIsCompareHovered] = useState(false);
 
-  const handleAddToCart = () => {
-    addToCart(item);
+  const isInCompareList = compareItems.some((i) => i.id === id);
+  const isInWishlist = wishlist.some((i) => i.id === id);
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    if (stock_quantity > 0) {
+      addToCart(item);
+    }
   };
 
-  const handleAddToCompare = () => {
+  const handleAddToCompare = (e) => {
+    e.preventDefault();
     addToCompare(item);
   };
 
-  const handleWishlistToggle = () => {
-    const isInWishlist = wishlist.some((i) => i.id === id);
+  const handleWishlistToggle = (e) => {
+    e.preventDefault();
     isInWishlist ? removeFromWishlist(item) : addToWishlist(item);
   };
-
-  const isInCompareList = compareItems.some(i => i.id === id);
-  const isInWishlist = wishlist.some(i => i.id === id);
 
   const renderStars = () => {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
     return (
       <div style={styles.stars}>
         {"★".repeat(fullStars)}
@@ -57,14 +62,16 @@ function ItemCard({ item }) {
   };
 
   return (
-    <div style={styles.card}>
+    <Link
+      to={`/products/${id}`}
+      style={{ ...styles.card, cursor: "pointer", textDecoration: "none" }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); setIsCompareHovered(false); }}
+    >
       <div style={styles.imageWrapper}>
-        <img src={base64image[0]} alt={title} style={styles.image} />
-        
-        {/* Cart Button */}
+        <img src={images} alt={title} style={styles.image} />
+
         <button
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
           onClick={handleAddToCart}
           disabled={stock_quantity <= 0}
           style={{
@@ -81,41 +88,32 @@ function ItemCard({ item }) {
           <ShoppingCart size={16} color="#111827" />
         </button>
 
-        {/* Compare Button */}
         <button
-          onMouseEnter={() => setIsCompareHovered(true)}
-          onMouseLeave={() => setIsCompareHovered(false)}
           onClick={handleAddToCompare}
           style={{
             ...styles.compareButton,
-            backgroundColor: isInCompareList 
-              ? "#d1fae5" 
+            backgroundColor: isInCompareList
+              ? "#d1fae5"
               : isCompareHovered
-                ? "#f9fafb"
-                : "#ffffff",
+              ? "#f9fafb"
+              : "#ffffff",
             cursor: isInCompareList ? "default" : "pointer",
             borderColor: isInCompareList ? "#10b981" : "#e5e7eb",
           }}
+          onMouseEnter={() => setIsCompareHovered(true)}
+          onMouseLeave={() => setIsCompareHovered(false)}
         >
-          <BarChart2 
-            size={16} 
-            color={isInCompareList ? "#10b981" : "#111827"} 
+          <BarChart2
+            size={16}
+            color={isInCompareList ? "#10b981" : "#111827"}
           />
         </button>
 
-        {/* Wishlist Button */}
-        <button
-          onClick={handleWishlistToggle}
-          style={{
-            ...styles.wishlistButton,
-            backgroundColor: "#ffffff",
-            borderColor: "#e5e7eb",
-          }}
-        >
-          <Heart 
-            size={16} 
-            color={isInWishlist ? "#ef4444" : "#9ca3af"} 
-            fill={isInWishlist ? "#ef4444" : "none"} 
+        <button onClick={handleWishlistToggle} style={styles.wishlistButton}>
+          <Heart
+            size={16}
+            color={isInWishlist ? "#ef4444" : "#9ca3af"}
+            fill={isInWishlist ? "#ef4444" : "none"}
           />
         </button>
       </div>
@@ -123,6 +121,7 @@ function ItemCard({ item }) {
       <div style={styles.content}>
         <p style={styles.title}>{title}</p>
         {renderStars()}
+
         <div style={styles.specs}>
           <p><strong>Brand:</strong> {brand}</p>
           <p><strong>Speed:</strong> {speed} MHz</p>
@@ -150,10 +149,9 @@ function ItemCard({ item }) {
             : "Out of stock"}
         </p>
       </div>
-    </div>
+    </Link>
   );
 }
-
 
 const styles = {
   card: {
@@ -164,8 +162,6 @@ const styles = {
     width: "280px",
     display: "flex",
     flexDirection: "column",
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     border: "1px solid #e5e7eb",
     transition: "transform 0.2s ease",
     color: "#111111",
@@ -190,30 +186,36 @@ const styles = {
     padding: "6px",
     borderRadius: "50%",
     border: "1px solid #e5e7eb",
-    backgroundColor: "#ffffff",
-    color: "#111827",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-    transition: "background-color 0.2s ease, box-shadow 0.2s ease",
-    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+    backgroundColor: "#ffffff",
   },
   compareButton: {
     position: "absolute",
     top: "10px",
-    right: "50px", // Position to the left of the cart button
+    right: "50px",
     padding: "6px",
     borderRadius: "50%",
     border: "1px solid #e5e7eb",
-    backgroundColor: "#ffffff",
-    color: "#111827",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-    transition: "all 0.2s ease",
-    cursor: "pointer",
+  },
+  wishlistButton: {
+    position: "absolute",
+    top: "10px",
+    right: "90px",
+    padding: "6px",
+    borderRadius: "50%",
+    border: "1px solid #e5e7eb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
   },
   content: {
     padding: "16px",
@@ -221,13 +223,11 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
     fontSize: "0.95rem",
-    color: "#111111",
   },
   title: {
-    margin: "0",
+    margin: 0,
     fontSize: "1rem",
     fontWeight: "600",
-    color: "#111111",
   },
   specs: {
     fontSize: "0.85rem",
@@ -247,7 +247,6 @@ const styles = {
   finalPrice: {
     fontWeight: "600",
     fontSize: "1.1rem",
-    color: "#111111",
   },
   discount: {
     color: "#dc2626",
@@ -258,20 +257,4 @@ const styles = {
     display: "flex",
     gap: "2px",
   },
-  wishlistButton: {
-    position: "absolute",
-    top: "10px",
-    right: "90px", // to the left of the compare button
-    padding: "6px",
-    borderRadius: "50%",
-    border: "1px solid #e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-    transition: "all 0.2s ease",
-    cursor: "pointer",
-  },
 };
-
-export default ItemCard;

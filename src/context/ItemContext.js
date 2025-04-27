@@ -1,46 +1,81 @@
+// src/contexts/ItemContext.js
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
-// Optionally, import your default items list
-// import defaultItems from '../data/items';
+import {
+  collection,
+  query,
+  onSnapshot,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from 'firebase/firestore';
+import { db } from '../firebase';
 
 const ItemContext = createContext();
 
-export const ItemProvider = ({ children, initialItems = [] }) => {
-  const [items, setItems] = useState(() => {
-    try {
-      const stored = localStorage.getItem('items');
-      return stored ? JSON.parse(stored) : initialItems;
-    } catch (e) {
-      console.error('Failed to parse items from localStorage', e);
-      return initialItems;
-    }
-  });
+export const ItemProvider = ({ children }) => {
+  const [items, setItems] = useState([]);
 
-  // Persist changes
   useEffect(() => {
+    // 1) build a query for the "items" collection
+    const q = query(collection(db, 'items'));
+
+    // 2) subscribe to real-time updates
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setItems(list);
+    }, (error) => {
+      console.error('Failed to fetch items:', error);
+    });
+
+    // 3) cleanup on unmount
+    return () => unsubscribe();
+  }, []);
+
+
+
+const addItem = async (item) => {
+  try {
+    // 1) create a new DocumentReference with an auto-generated ID
+    const newDocRef = doc(collection(db, 'items'));
+    // 2) write the document, including that ID in the data payload
+    await setDoc(newDocRef, { ...item, id: newDocRef.id });
+    // 3) return the newly created item (with its ID)
+    return { id: newDocRef.id, ...item };
+  } catch (e) {
+    console.error('Error adding item:', e);
+    throw e;
+  }
+};
+
+
+  // UPDATE
+  const updateItem = async (updated) => {
     try {
-      localStorage.setItem('items', JSON.stringify(items));
+      const ref = doc(db, 'items', updated.id);
+      // don't overwrite id field
+      const { id, ...data } = updated;
+      await updateDoc(ref, data);
     } catch (e) {
-      console.error('Failed to save items to localStorage', e);
+      console.error('Error updating item:', e);
     }
-  }, [items]);
-
-  // CRUD operations
-  const addItem = (item) => {
-    setItems((prev) => [...prev, item]);
   };
 
-  const updateItem = (updated) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
-    );
+  // DELETE
+  const removeItem = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'items', id));
+    } catch (e) {
+      console.error('Error deleting item:', e);
+    }
   };
 
-  const removeItem = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const getItemById = (id) => items.find((item) => item.id === id);
+  // READ helper
+  const getItemById = (id) => items.find(item => item.id === id);
 
   return (
     <ItemContext.Provider

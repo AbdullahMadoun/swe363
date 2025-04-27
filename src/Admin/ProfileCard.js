@@ -1,6 +1,8 @@
-import { useState } from 'react';
+// src/components/ProfileCard.js
+import React, { useState, useContext } from 'react';
 import { Pencil } from 'lucide-react';
 import EditUsernameModal from './EditUsernameModal';
+import { UserContext } from '../context/UserContext';
 
 const styles = {
   container: {
@@ -24,6 +26,7 @@ const styles = {
     height: '40px',
     borderRadius: '50%',
     objectFit: 'cover',
+    backgroundColor: '#eee',
   },
   name: {
     fontWeight: 600,
@@ -39,8 +42,9 @@ const styles = {
   },
 };
 
-export default function ProfileCard({ user, onUpdate, onRemove }) {
+export default function ProfileCard({ user }) {
   const [showModal, setShowModal] = useState(false);
+  const { updateUser, removeUser } = useContext(UserContext);
 
   if (!user) return null;
 
@@ -49,7 +53,7 @@ export default function ProfileCard({ user, onUpdate, onRemove }) {
       <div style={styles.container}>
         <div style={styles.leftSection}>
           <img
-            src={user.avatar || ''}
+            src={user.avatar || 'https://via.placeholder.com/40'}
             alt="Profile"
             style={styles.avatar}
           />
@@ -58,19 +62,23 @@ export default function ProfileCard({ user, onUpdate, onRemove }) {
             <div style={styles.role}>{user.role || 'Buyer'}</div>
           </div>
         </div>
-        <Pencil size={18} style={styles.icon} onClick={() => setShowModal(true)} />
+        <Pencil
+          size={18}
+          style={styles.icon}
+          onClick={() => setShowModal(true)}
+        />
       </div>
 
       {showModal && (
         <EditUsernameModal
-          user={user}
           onClose={() => setShowModal(false)}
-          onApply={(updatedUser) => {
-            onUpdate(user.username, updatedUser);
+          onApply={(updated) => {
+            // updated contains { id, username: newName, ... }
+            updateUser(user.id, updated.username);
             setShowModal(false);
           }}
-          onRemove={(id) => {
-            onRemove(id);
+          onRemove={() => {
+            removeUser(user.id);
             setShowModal(false);
           }}
         />

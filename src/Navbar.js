@@ -1,8 +1,12 @@
+// src/components/Navbar.js
 import React, { useContext } from 'react';
-import { UserContext } from './UserContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import {useNavigate } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
+
+import { UserContext } from './context/UserContext';
+import { CartContext } from './context/CartContext';
+
 const Nav = styled.nav`
   background-color: white;
   padding: 10px 30px;
@@ -29,13 +33,28 @@ const NavList = styled.ul`
 `;
 
 const NavLink = styled(Link)`
+  position: relative;
   text-decoration: none;
   color: #1d1d1f;
   font-weight: 500;
+  &:hover { text-decoration: underline; }
+`;
 
-  &:hover {
-    text-decoration: underline;
-  }
+const CartIconWrapper = styled.div`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+`;
+
+const Badge = styled.span`
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background-color: #ef4444;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.75rem;
 `;
 
 const LogoutButton = styled.button`
@@ -44,68 +63,86 @@ const LogoutButton = styled.button`
   color: #dc3545;
   cursor: pointer;
   font-weight: 600;
-
-  &:hover {
-    text-decoration: underline;
-  }
+  &:hover { text-decoration: underline; }
 `;
 
-function Navbar() {
-  const { user, logout } = useContext(UserContext);
-  const navigate = useNavigate();
+export default function Navbar() {
+  const { logoutUser, user } = useContext(UserContext);
+  const { cart }         = useContext(CartContext);
+  const navigate         = useNavigate();
 
-  const handleClick = () => {
-    navigate('/some-path');
-  };
-  
   const buyerLinks = [
-    { to: "/cart", label: "Cart" },
     { to: "/wishlist", label: "Wishlist" },
-    { to: "/policy", label: "Policy"},
-    {to:"/orders", label: "Orders"}
+    { to: "/policy",   label: "Policy"   },
+    { to: "/orders",   label: "Orders"   },
+    { to: "/compare",   label: "Compare"   },
+
   ];
 
   const sellerLinks = [
-    { to: "/seller/products", label: "My Products" },
-    { to: "/seller/orders", label: "Orders" },
+    { to: "/seller/products", label: "My Products"  },
+    { to: "/seller/orders",   label: "Orders"       },
     { to: "/seller/addproduct", label: "Add Product" },
-    { to: "/policy", label: "Policy"},
+    { to: "/policy",           label: "Policy"      },
   ];
 
   const adminLinks = [
-    { to: "/Admin/accounts", label: "Accounts" },
-    { to: "/Admin/policycontrol", label: "Policy Control" },
-    { to: "/policy", label: "Policy"},
+    { to: "/admin/accounts",      label: "Accounts"       },
+    { to: "/admin/policycontrol", label: "Policy Control" },
+    { to: "/policy",              label: "Policy"         },
   ];
 
   const getRoleLinks = () => {
-    const role = (user?.role || '').toLowerCase();
-    if (role.toLowerCase()  === 'buyer') return buyerLinks;
-    if (role.toLowerCase()  === 'seller') return sellerLinks;
-    if (role.toLowerCase() === 'admin') return adminLinks;
-    return [];
-  };
-    const logouty = () => { 
-      logout(); 
-      navigate("/");
+    if (!user?.role) return [];
+    switch (user.role.toLowerCase()) {
+      case "buyer":  return buyerLinks;
+      case "seller": return sellerLinks;
+      case "admin":  return adminLinks;
+      default:       return [];
     }
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    navigate("/");
+  };
+
   return (
     <Nav>
-      <Logo to="/main">TechMart</Logo>
+      <Logo to={user ? "/main" : "/"}>TechMart</Logo>
 
       <NavList>
-        {!user || user.role ==="Admin" ? "": <li><NavLink to="/main">Home</NavLink></li>}
-
-        {user ? (
+        {user && (
           <>
-            {getRoleLinks().map(link => (
-              <li key={link.to}>
-                <NavLink to={link.to}>{link.label}</NavLink>
+          
+       
+            {/* Home & Logout */}
+            <li><NavLink to="/main">Home</NavLink></li>
+         
+            {/* Then role‐specific links (excluding /cart) */}
+            {getRoleLinks().map(({ to, label }) => (
+              <li key={to}>
+                <NavLink to={to}>{label}</NavLink>
               </li>
             ))}
-            <li><LogoutButton onClick={logouty}>Logout</LogoutButton></li>
+            
+            {/* Cart Icon */}
+            {user.role === "Buyer" && (  <li>
+              <NavLink to="/cart">
+                <CartIconWrapper>
+                  <ShoppingCart size={20} />
+                  {cart.length > 0 && <Badge>{cart.length}</Badge>}
+                </CartIconWrapper>
+              </NavLink>
+            </li>) }
+            <li><LogoutButton onClick={handleLogout}>Logout</LogoutButton></li>
+
+          
+         
           </>
-        ) : (
+        )}
+
+        {!user && (
           <>
             <li><NavLink to="/login">Login</NavLink></li>
             <li><NavLink to="/signup">Signup</NavLink></li>
@@ -115,5 +152,3 @@ function Navbar() {
     </Nav>
   );
 }
-
-export default Navbar;

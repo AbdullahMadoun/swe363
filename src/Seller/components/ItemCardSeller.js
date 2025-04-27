@@ -8,7 +8,7 @@ function ItemCard({ item, mode = 'seller' }) {
   const {
     id,
     title,
-    base64image,
+    images,
     price,
     discount = 0,
     stock_quantity = 0,
@@ -44,7 +44,7 @@ function ItemCard({ item, mode = 'seller' }) {
       onClick={handleCardClick}
     >
       <div style={styles.imageWrapper}>
-        <img src={base64image} alt={title} style={styles.image} />
+        <img src={images} alt={title} style={styles.image} />
         {renderModifyButton()}
       </div>
 

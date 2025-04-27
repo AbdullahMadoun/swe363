@@ -1,12 +1,11 @@
-import React, { useState, useContext,useEffect } from "react";
+// src/components/MainPage.js
+import React, { useState, useContext, useEffect } from "react";
 import ItemCard from "./ItemCard";
-import { CartContext } from "./CartContext";
-import { useItems } from './context/ItemContext';
+import { CartContext } from "./context/CartContext";
+import { useItems } from "./context/ItemContext";
 
-function MainPage() {
- 
+export default function MainPage() {
   const { items } = useItems();
-
   const { addToCart } = useContext(CartContext);
 
   const [keywords, setKeywords] = useState([]);
@@ -17,7 +16,7 @@ function MainPage() {
 
   const [brands, setBrands] = useState([]);
   const [sizes, setSizes] = useState([]);
-  const [maxPrice, setMaxPrice] = useState(100); // Default fallback
+  const [maxPrice, setMaxPrice] = useState(100);
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [sortOrder, setSortOrder] = useState("price-asc");
 
@@ -32,6 +31,20 @@ function MainPage() {
     );
     setSizes(uniqueSizes);
   }, [items]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      const max = Math.max(
+        ...items.map((item) => {
+          const finalPrice = item.price - (item.price * item.discount) / 100;
+          return finalPrice;
+        })
+      );
+      setMaxPrice(Math.ceil(max));
+      setPriceRange([0, Math.ceil(max)]);
+    }
+  }, [items]);
+
   const addKeyword = (word) => {
     const cleaned = word.trim().toLowerCase();
     if (cleaned && !keywords.includes(cleaned)) {
@@ -39,15 +52,7 @@ function MainPage() {
     }
     setInput("");
   };
-  useEffect(() => {
-    if (items.length > 0) {
-      const max = Math.max(...items.map((item) => {
-        const finalPrice = item.price - (item.price * item.discount) / 100;
-        return finalPrice;
-      }));
-      setMaxPrice(Math.ceil(max));
-    }
-  }, [items]);
+
   const removeKeyword = (word) => {
     setKeywords(keywords.filter((kw) => kw !== word));
   };
@@ -62,61 +67,71 @@ function MainPage() {
     }
   };
 
-  const suggestions = [...new Set(items.map((item) => item.title.toLowerCase().split(" ")).flat())]
-    .filter((word) => word.startsWith(input.toLowerCase()) && !keywords.includes(word))
+  const suggestions = [...new Set(
+    items
+      .map((item) => item.title.toLowerCase().split(" "))
+      .flat()
+  )]
+    .filter(
+      (word) =>
+        word.startsWith(input.toLowerCase()) && !keywords.includes(word)
+    )
     .slice(0, 5);
-    const filteredItems = items.filter((item) => {
-      const finalPrice = item.price - (item.price * item.discount) / 100;
-      const titleLower = item.title?.toString().toLowerCase() || '';
-    
-      const matchesKeywords =
-        keywords.length === 0 || keywords.every((kw) => titleLower.includes(kw));
-    
-      const matchesRating =
-        !minRating || item.rating >= 4;
 
-    
-      const matchesBrand =
-        brands.length === 0 || brands.includes(item.brand);
-    
-      const matchesSize =
-        sizes.length === 0 || sizes.includes(item.capacity);
-    
-      const matchesPrice =
-        finalPrice >= priceRange[0] && finalPrice <= priceRange[1];
-    
-      return (
-        matchesKeywords &&
-        matchesRating &&
-        matchesBrand &&
-        matchesSize &&
-        matchesPrice
-      );
-    });
-    
+  const filteredItems = items.filter((item) => {
+    const finalPrice = item.price - (item.price * item.discount) / 100;
+    const titleLower = item.title?.toString().toLowerCase() || "";
 
-  const sortItems = (items) => {
+    const matchesKeywords =
+      keywords.length === 0 ||
+      keywords.every((kw) => titleLower.includes(kw));
+
+    const matchesRating = !minRating || item.rating >= 4;
+
+    const matchesBrand =
+      brands.length === 0 || brands.includes(item.brand);
+
+    const matchesSize =
+      sizes.length === 0 || sizes.includes(item.capacity);
+
+    const matchesPrice =
+      finalPrice >= priceRange[0] && finalPrice <= priceRange[1];
+
+    return (
+      matchesKeywords &&
+      matchesRating &&
+      matchesBrand &&
+      matchesSize &&
+      matchesPrice
+    );
+  });
+
+  const sortItems = (list) => {
     switch (sortOrder) {
       case "price-asc":
-        return [...items].sort((a, b) => a.price - b.price);
+        return [...list].sort((a, b) => a.price - b.price);
       case "price-desc":
-        return [...items].sort((a, b) => b.price - a.price);
+        return [...list].sort((a, b) => b.price - a.price);
       case "rating":
-        return [...items].sort((a, b) => b.rating - a.rating);
+        return [...list].sort((a, b) => b.rating - a.rating);
       default:
-        return items;
+        return list;
     }
   };
 
   const toggleBrand = (brand) => {
     setBrands((prev) =>
-      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+      prev.includes(brand)
+        ? prev.filter((b) => b !== brand)
+        : [...prev, brand]
     );
   };
 
   const toggleSize = (size) => {
     setSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+      prev.includes(size)
+        ? prev.filter((s) => s !== size)
+        : [...prev, size]
     );
   };
 
@@ -146,7 +161,14 @@ function MainPage() {
             {s}
           </div>
         ))}
-        <div style={{ marginTop: "10px", display: "flex", gap: "5px", flexWrap: "wrap" }}>
+        <div
+          style={{
+            marginTop: "10px",
+            display: "flex",
+            gap: "5px",
+            flexWrap: "wrap",
+          }}
+        >
           {keywords.map((kw) => (
             <div
               key={kw}
@@ -209,18 +231,22 @@ function MainPage() {
           />
           <label>Free Delivery</label>
         </div>
+
         <label style={{ marginTop: "10px" }}>Price</label>
         <input
           type="range"
           min="0"
           max={maxPrice}
           value={priceRange[1]}
-          onChange={(e) => setPriceRange([0, Number(e.target.value)])}
+          onChange={(e) =>
+            setPriceRange([0, Number(e.target.value)])
+          }
           style={{ width: "100%" }}
         />
         <div style={{ fontSize: "0.9rem" }}>
           ${priceRange[0]}–${priceRange[1]}
         </div>
+
         <label style={{ marginTop: "10px" }}>Brand</label>
         {brands.map((brand) => (
           <div key={brand} style={styles.checkbox}>
@@ -228,10 +254,11 @@ function MainPage() {
               type="checkbox"
               checked={brands.includes(brand)}
               onChange={() => toggleBrand(brand)}
-            />  
+            />
             <label>{brand}</label>
           </div>
         ))}
+
         <label style={{ marginTop: "10px" }}>Size</label>
         {sizes.map((size) => (
           <div key={size} style={styles.checkbox}>
@@ -258,19 +285,31 @@ function MainPage() {
           <div style={styles.sortBar}>
             <button
               onClick={() => setSortOrder("price-asc")}
-              style={sortOrder === "price-asc" ? styles.activeSortBtn : styles.sortBtn}
+              style={
+                sortOrder === "price-asc"
+                  ? styles.activeSortBtn
+                  : styles.sortBtn
+              }
             >
               ✓ Price ascending
             </button>
             <button
               onClick={() => setSortOrder("price-desc")}
-              style={sortOrder === "price-desc" ? styles.activeSortBtn : styles.sortBtn}
+              style={
+                sortOrder === "price-desc"
+                  ? styles.activeSortBtn
+                  : styles.sortBtn
+              }
             >
               Price descending
             </button>
             <button
               onClick={() => setSortOrder("rating")}
-              style={sortOrder === "rating" ? styles.activeSortBtn : styles.sortBtn}
+              style={
+                sortOrder === "rating"
+                  ? styles.activeSortBtn
+                  : styles.sortBtn
+              }
             >
               Rating
             </button>
@@ -282,7 +321,11 @@ function MainPage() {
             <p>No items match your criteria.</p>
           ) : (
             sortItems(filteredItems).map((item) => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                onAddToCart={() => addToCart(item)}
+              />
             ))
           )}
         </section>
@@ -290,8 +333,6 @@ function MainPage() {
     </div>
   );
 }
-
-
 
 const styles = {
   pageWrapper: {
@@ -303,70 +344,41 @@ const styles = {
     padding: "20px",
   },
   sidebar: {
-    width: "240px",
-    padding: "20px",
-    borderRadius: "12px",
-    border: "1px solid #e5e5e5",
-    backgroundColor: "#fafafa",
-    marginRight: "20px",
-    fontSize: "1rem",
-    accentColor: "black",
+    width: "240px", padding: "20px", borderRadius: "12px",
+    border: "1px solid #e5e5e5", backgroundColor: "#fafafa",
+    marginRight: "20px", fontSize: "1rem", accentColor: "black",
   },
   input: {
-    width: "100%",
-    padding: "8px",
-    margin: "8px 0",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    backgroundColor: "#fff",
-    accentColor: "black",
+    width: "100%", padding: "8px", margin: "8px 0",
+    borderRadius: "6px", border: "1px solid #ccc",
+    backgroundColor: "#fff", accentColor: "black",
   },
   checkbox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    marginTop: "6px",
-    accentColor: "black",
+    display: "flex", alignItems: "center", gap: "8px",
+    marginTop: "6px", accentColor: "black",
   },
   topBar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    gap: "16px",
-    flexWrap: "wrap",
+    display: "flex", justifyContent: "space-between",
+    alignItems: "center", marginBottom: "20px",
+    gap: "16px", flexWrap: "wrap",
   },
   searchBar: {
-    flexGrow: 1,
-    padding: "10px 16px",
-    borderRadius: "9999px",
-    border: "1px solid #e5e7eb",
-    backgroundColor: "#f9fafb",
-    fontSize: "0.95rem",
-    color: "#111827",
-    minWidth: "200px",
+    flexGrow: 1, padding: "10px 16px", borderRadius: "9999px",
+    border: "1px solid #e5e7eb", backgroundColor: "#f9fafb",
+    fontSize: "0.95rem", color: "#111827", minWidth: "200px",
   },
   sortBar: {
-    display: "flex",
-    gap: "10px",
+    display: "flex", gap: "10px",
   },
   sortBtn: {
-    padding: "6px 12px",
-    borderRadius: "8px",
-    backgroundColor: "#f0f0f0",
-    border: "1px solid #ccc",
-    cursor: "pointer",
-    fontWeight: "500",
-    color: "#555",
+    padding: "6px 12px", borderRadius: "8px",
+    backgroundColor: "#f0f0f0", border: "1px solid #ccc",
+    cursor: "pointer", fontWeight: "500", color: "#555",
   },
   activeSortBtn: {
-    padding: "6px 12px",
-    borderRadius: "8px",
-    backgroundColor: "#1d1d1f",
-    color: "#fff",
-    border: "none",
-    fontWeight: "600",
-    cursor: "pointer",
+    padding: "6px 12px", borderRadius: "8px",
+    backgroundColor: "#1d1d1f", color: "#fff",
+    border: "none", fontWeight: "600", cursor: "pointer",
   },
   itemsGrid: {
     display: "grid",
@@ -375,5 +387,3 @@ const styles = {
     flex: 1,
   },
 };
-
-export default MainPage;

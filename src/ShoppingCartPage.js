@@ -1,16 +1,30 @@
-import { useContext } from "react";
-import { CartContext } from "./CartContext";
-import { useNavigate } from "react-router-dom";
+// src/components/ShoppingCartPage.jsx
 
-function ShoppingCartPage() {
-  const { cart, removeFromCart } = useContext(CartContext);
+import React, { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { CartContext } from "./context/CartContext";
+import { ShoppingCart, MinusCircle, PlusCircle } from "lucide-react";
+
+export default function ShoppingCartPage() {
+  const { cart, addToCart, removeFromCart, clearCart } = useContext(CartContext);
   const navigate = useNavigate();
 
+  // 1) Aggregate items by id to get quantities
+  const aggregated = cart.reduce((acc, item) => {
+    if (!acc[item.id]) {
+      acc[item.id] = { item, qty: 0 };
+    }
+    acc[item.id].qty += 1;
+    return acc;
+  }, {});
+  const itemsWithQty = Object.values(aggregated);
+
+  // 2) Compute total across quantity
   const getTotal = () => {
-    return cart
-      .reduce((total, item) => {
-        const finalPrice = item.price - (item.price * item.discount) / 100;
-        return total + finalPrice;
+    return itemsWithQty
+      .reduce((total, { item, qty }) => {
+        const finalPrice = item.price * (1 - item.discount / 100);
+        return total + finalPrice * qty;
       }, 0)
       .toFixed(2);
   };
@@ -22,56 +36,90 @@ function ShoppingCartPage() {
   return (
     <div style={styles.container}>
       <h1 style={styles.heading}>Your Shopping Cart</h1>
-      {cart.length === 0 ? (
+      {itemsWithQty.length === 0 ? (
         <p>Your cart is empty.</p>
       ) : (
-        <div style={styles.cartItems}>
-          {cart.map((item, index) => {
-            const finalPrice = item.price - (item.price * item.discount) / 100;
-            return (
-              <div key={index} style={styles.itemCard}>
-                <img src={item.base64image} alt={item.title} style={styles.image} />
-                <div>
-                  <h3>{item.title}</h3>
-                  <p><strong>Brand:</strong> {item.brand}</p>
-                  <p><strong>Speed:</strong> {item.speed} MHz</p>
-                  <p><strong>Capacity:</strong> {item.capacity}</p>
-                  <p>
-                    <strong>Price:</strong> ${finalPrice.toFixed(2)}
-                    {item.discount > 0 && (
-                      <span style={styles.discount}> (-{item.discount}%)</span>
-                    )}
-                  </p>
-                  <button onClick={() => removeFromCart(item)} style={styles.removeButton}>
-                    Remove
-                  </button>
+        <>
+          <button style={styles.clearButton} onClick={clearCart}>
+            Clear Cart
+          </button>
+          <div style={styles.cartItems}>
+            {itemsWithQty.map(({ item, qty }) => {
+              const finalPrice = item.price * (1 - item.discount / 100);
+              return (
+                <div key={item.id} style={styles.itemCard}>
+                  <img
+                    src={item.base64image}
+                    alt={item.title}
+                    style={styles.image}
+                  />
+                  <div style={styles.info}>
+                    <h3>{item.title}</h3>
+                    <p><strong>Brand:</strong> {item.brand}</p>
+                    <p><strong>Speed:</strong> {item.speed} MHz</p>
+                    <p><strong>Capacity:</strong> {item.capacity}</p>
+                    <p>
+                      <strong>Unit Price:</strong> ${finalPrice.toFixed(2)}
+                      {item.discount > 0 && (
+                        <span style={styles.discount}> (-{item.discount}%)</span>
+                      )}
+                    </p>
+                    <div style={styles.quantityControls}>
+                      <MinusCircle
+                        size={20}
+                        style={styles.qtyButton}
+                        onClick={() => removeFromCart(item)}
+                      />
+                      <span style={styles.qtyText}>{qty}</span>
+                      <PlusCircle
+                        size={20}
+                        style={styles.qtyButton}
+                        onClick={() => addToCart(item)}
+                      />
+                    </div>
+                    <p style={styles.subtotal}>
+                      Subtotal: ${(finalPrice * qty).toFixed(2)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
           <div style={styles.footer}>
             <div style={styles.total}>
               <h2>Total: ${getTotal()}</h2>
             </div>
-            <button onClick={handleProceedToBuy} style={styles.buyButton}>
+            <button
+              onClick={handleProceedToBuy}
+              style={styles.buyButton}
+            >
               Proceed to Buy
             </button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 }
 
-export default ShoppingCartPage;
-
 const styles = {
   container: {
     padding: "2rem",
+    fontFamily: "system-ui, sans-serif",
   },
   heading: {
     fontSize: "2rem",
-    marginBottom: "1.5rem",
+    marginBottom: "1rem",
+  },
+  clearButton: {
+    marginBottom: "1rem",
+    padding: "0.5rem 1rem",
+    backgroundColor: "#ef4444",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
   },
   cartItems: {
     display: "flex",
@@ -92,18 +140,33 @@ const styles = {
     objectFit: "cover",
     borderRadius: "6px",
   },
+  info: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
   discount: {
     marginLeft: "8px",
     color: "#ef4444",
   },
-  removeButton: {
+  quantityControls: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
     marginTop: "0.5rem",
-    padding: "0.5rem 1rem",
-    border: "none",
-    backgroundColor: "#ef4444",
-    color: "white",
-    borderRadius: "4px",
+  },
+  qtyButton: {
     cursor: "pointer",
+  },
+  qtyText: {
+    minWidth: "24px",
+    textAlign: "center",
+    fontSize: "1rem",
+  },
+  subtotal: {
+    marginTop: "0.5rem",
+    fontWeight: "600",
   },
   footer: {
     display: "flex",

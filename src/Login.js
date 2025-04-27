@@ -1,70 +1,59 @@
+// src/Login.js
+import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import visibilityOff from "./assets/visibility_off.png";
 import visibilityOn from "./assets/visibility_on.png";
-import { useState, useContext } from "react";
-import { UserContext } from "./UserContext";
-import { useNavigate } from "react-router-dom";
+import { UserContext } from "./context/UserContext";
 
-function Login() {
-  const [visible, setVisible] = useState(false);
+export default function Login() {
+  const [visible, setVisible]   = useState(false);
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [error, setError]       = useState("");
+  const navigate                = useNavigate();
+  const { loginUser }           = useContext(UserContext);
 
-  const { loginUser } = useContext(UserContext);
+  const validateEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const validateEmail = (email) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return pattern.test(email);
-  };
-
-  function login(formData) {
-    const email = formData.get("email");
-    const password = formData.get("password");
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
     if (!validateEmail(email)) {
       setError("Invalid email format");
       return;
     }
 
-    const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-
-    const foundUser = storedUsers.find(
-      (user) => user.email === email && user.password === password
-    );
-
-    if (foundUser) {
-      setError("");
-      loginUser(foundUser); // ✅ set user in context
-    } else {
-      setError("Invalid email or password");
+    try {
+      await loginUser(email, password);
+      navigate("/main"); // or route based on role if you fetch it in context
+    } catch (err) {
+      // handle Firebase auth errors
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setError("Invalid email or password");
+      } else {
+        setError(err.message);
+      }
     }
-  }
+  };
 
   return (
     <div style={styles.pageWrapper}>
       <div style={styles.card}>
-      <h1 style={styles.heading}>TechMart</h1>
-      <h2 style={styles.subheading}>Welcome again</h2>
+        <h1 style={styles.heading}>TechMart</h1>
+        <h2 style={styles.subheading}>Welcome back</h2>
 
-       
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            login(new FormData(e.target));
-          }}
-        >
+        <form onSubmit={handleSubmit}>
           {error && <p style={styles.errorText}>{error}</p>}
 
           <div style={styles.formGroup}>
-            <label style={styles.label} htmlFor="login-email">
-              Email address
-            </label>
+            <label style={styles.label}>Email address</label>
             <input
               style={styles.input}
               type="email"
-              id="email"
-              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -72,23 +61,18 @@ function Login() {
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label} htmlFor="login-password">
-              Password
-            </label>
+            <label style={styles.label}>Password</label>
             <div style={styles.passwordWrapper}>
               <input
                 style={styles.passwordInput}
                 type={visible ? "text" : "password"}
-                id="password"
-                name="password"
                 value={password}
-                placeholder="************"
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
               <button
                 type="button"
-                onClick={() => setVisible(!visible)}
+                onClick={() => setVisible((v) => !v)}
                 style={styles.visibilityButton}
               >
                 <img
@@ -101,27 +85,25 @@ function Login() {
           </div>
 
           <button type="submit" style={styles.submitButton}>
-            Sign in
+            Sign In
           </button>
         </form>
+
         <p style={styles.bottomText}>
           Don't have an account?
-          <span style={styles.signUpLink} onClick={() => {
-              navigate("/signup"); 
-              window.location.reload();
-          }
-
-          }>
+          <span
+            style={styles.signUpLink}
+            onClick={() => navigate("/signup")}
+          >
+            {" "}
             Sign Up
           </span>
         </p>
-
       </div>
     </div>
   );
 }
 
-export default Login;
 const styles = {
   pageWrapper: {
     backgroundColor: "#ffffff",
@@ -137,7 +119,7 @@ const styles = {
     width: "100%",
     maxWidth: "380px",
     padding: "2rem",
-    border: "1px solid #e5e7eb", // light gray border
+    border: "1px solid #e5e7eb",
     borderRadius: "8px",
     boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
     boxSizing: "border-box",

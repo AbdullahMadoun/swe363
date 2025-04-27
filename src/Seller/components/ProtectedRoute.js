@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { UserContext } from '../../UserContext.js';
+import { UserContext } from '../../context/UserContext.js';
 import Loading from '../../Loading.js'
 
 function ProtectedRoute({ children, requiredRole }) {

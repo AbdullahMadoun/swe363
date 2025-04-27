@@ -1,21 +1,21 @@
+// src/pages/AddProductPage.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useItems } from "../../context/ItemContext"; // Ensure path is correct
-
+import { useItems } from "../../context/ItemContext";
+import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
+import app from "../../firebase";
+import { useContext } from "react";
+import { UserContext } from "../../context/UserContext";
 function AddProductPage() {
   const navigate = useNavigate();
   const { addItem } = useItems();
-  const localStorageKey = "ecommerce_products";
+  const storage = getStorage(app);
 
-  const getCurrentUser = () => {
-    const userString = localStorage.getItem("user");
-    try {
-      return userString ? JSON.parse(userString) : null;
-    } catch (e) {
-      console.error("Error parsing user from local storage", e);
-      return null;
-    }
-  };
+// inline in a component file
+
+
+
+  const { user } = useContext(UserContext);
 
   const [form, setForm] = useState({
     title: "",
@@ -26,7 +26,6 @@ function AddProductPage() {
     brand: "",
     capacity: "",
   });
-
   const [imagePreviews, setImagePreviews] = useState([]);
   const [message, setMessage] = useState("");
 
@@ -42,45 +41,42 @@ function AddProductPage() {
       return;
     }
 
-    const validImages = files.filter((file) => file.size <= 2 * 1024 * 1024);
-    if (validImages.length < files.length) {
-      setMessage("Each image must be less than 2MB.");
+    const valid = files.filter((f) => f.size <= 1* 1024 * 1024);
+    if (valid.length < files.length) {
+      setMessage("Each image must be less than 1MB.");
       return;
     }
 
+    setMessage("");
     setImagePreviews([]);
-    validImages.forEach((file) => {
+    valid.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviews((prev) => [...prev, reader.result]);
+        setImagePreviews((p) => [...p, reader.result]);
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
 
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
+    if (!user) {
       setMessage("Error: You must be logged in to add a product.");
       return;
     }
-
-    if (imagePreviews.length === 0) {
+    if (!imagePreviews.length) {
       setMessage("Please upload at least one product image.");
       return;
     }
 
     try {
-      const storedProducts = localStorage.getItem(localStorageKey);
-      const products = storedProducts ? JSON.parse(storedProducts) : [];
-
+      
+      // 2) build product payload (Firestore will assign its own id)
       const newProduct = {
-        id: Date.now(),
+        
         title: form.title,
-        base64image: imagePreviews,
         price: parseFloat(form.price),
         discount: parseFloat(form.discount) || 0,
         stock_quantity: parseInt(form.stock_quantity, 10) || 0,
@@ -88,15 +84,13 @@ function AddProductPage() {
         capacity: form.capacity,
         brand: form.brand,
         rating: 0,
-        sellerId: currentUser.id,
+        sellerId: user.uid,
+        images: imagePreviews[0],
+        createdAt: Date.now(),
       };
 
-      // Save to localStorage (seller’s products list)
-      products.push(newProduct);
-      localStorage.setItem(localStorageKey, JSON.stringify(products));
-
-      // Save to context (global item list)
-      addItem(newProduct);
+      // 3) persist to Firestore
+      await addItem(newProduct);
 
       setMessage("Product successfully added!");
       setForm({
@@ -110,17 +104,15 @@ function AddProductPage() {
       });
       setImagePreviews([]);
       document.getElementById("productImageInput").value = "";
-    } catch (error) {
-      console.error("Error saving product:", error);
-      setMessage("Something went wrong while saving the product.");
+    } catch (err) {
+      console.error("Error saving product:", err);
+      setMessage("Something went wrong while saving your product.");
     }
   };
 
-  const handleCancel = () => {
-    navigate("/main");
-  };
+  const handleCancel = () => navigate("/main");
 
-  if (!getCurrentUser()) {
+  if (!user){
     return <p>You need to be logged in to add products.</p>;
   }
 
@@ -189,7 +181,11 @@ function AddProductPage() {
             </div>
           )}
           <div style={styles.buttonGroup}>
-            <button type="button" onClick={handleCancel} style={styles.cancelButton}>
+            <button
+              type="button"
+              onClick={handleCancel}
+              style={styles.cancelButton}
+            >
               Cancel
             </button>
             <button type="submit" style={styles.submitButton}>
@@ -201,6 +197,10 @@ function AddProductPage() {
     </div>
   );
 }
+
+
+
+
 
 const styles = {
   pageWrapper: {

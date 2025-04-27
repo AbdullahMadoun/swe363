@@ -1,126 +1,109 @@
+// src/Signup.js
 import React, { useState, useEffect, useContext } from "react";
-import { UserContext } from "./UserContext";
+import { useNavigate } from "react-router-dom";
 import visibilityOff from "./assets/visibility_off.png";
 import visibilityOn from "./assets/visibility_on.png";
-import { useNavigate } from "react-router-dom";
+import { UserContext } from "./context/UserContext";
 
-function Signup() {
-  const { loginUser } = useContext(UserContext);
+export default function Signup() {
+  const { signupUser } = useContext(UserContext);
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Buyer");
-
-  const [visible, setVisible] = useState(false);
+  const [email, setEmail]           = useState("");
+  const [username, setUsername]     = useState("");
+  const [password, setPassword]     = useState("");
+  const [role, setRole]             = useState("Buyer");
+  const [visible, setVisible]       = useState(false);
   const [errorEmail, setErrorEmail] = useState("");
-  const [valid, setValid] = useState(true);
-  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [valid, setValid]           = useState(false);
 
-  const [users, setUsers] = useState(() => {
-    const stored = localStorage.getItem("users");
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [requirements, setRequirements] = useState([
+  const requirementsTemplate = [
     {
       text: "Password must be at least 8 characters long",
-      isValid: false,
       check: (pwd) => pwd.length >= 8,
     },
     {
       text: "Password must include at least one lowercase letter",
-      isValid: false,
       check: (pwd) => /[a-z]/.test(pwd),
     },
     {
       text: "Password must include at least one uppercase letter",
-      isValid: false,
       check: (pwd) => /[A-Z]/.test(pwd),
     },
     {
       text: "Password must include at least one digit",
-      isValid: false,
       check: (pwd) => /\d/.test(pwd),
     },
     {
       text: "Password must include at least one special character",
-      isValid: false,
       check: (pwd) => /[^A-Za-z0-9]/.test(pwd),
     },
-  ]);
+  ];
+  const [requirements, setRequirements] = useState(
+    requirementsTemplate.map((r) => ({ ...r, isValid: false }))
+  );
 
-  function checkEmail(string) {
-    setEmail(string);
-    const patternValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Validate email format
+  const checkEmail = (value) => {
+    setEmail(value);
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setErrorEmail(pattern.test(value) ? "" : "Invalid email format");
+  };
 
-    if (!patternValid.test(string)) {
-      setErrorEmail("Invalid email format");
-      setValid(false);
-    } else if (users.some((user) => user.email === string)) {
-      setErrorEmail("Email already in use");
-      setValid(false);
-    } else {
-      setErrorEmail("");
-      setValid(true);
-    }
-  }
+  // Keep the raw password (no spaces)
+  const checkPassword = (value) => {
+    setPassword(value.replace(/\s/g, ""));
+  };
 
-  function checkPassword(string) {
-    setPassword(string.replace(" ", ""));
-  }
-
+  // Update which password rules pass, and overall form validity
   useEffect(() => {
-    const updatedRequirements = requirements.map((req) => ({
-      ...req,
-      isValid: req.check(password),
+    const updated = requirementsTemplate.map((r) => ({
+      text: r.text,
+      check: r.check,
+      isValid: r.check(password),
     }));
-    setRequirements(updatedRequirements);
-    setValid(updatedRequirements.every((req) => req.isValid));
-  }, [password]);
+    setRequirements(updated);
 
-  function signUp(e) {
+    setValid(
+      email &&
+        !errorEmail &&
+        username.trim() &&
+        updated.every((r) => r.isValid)
+    );
+  }, [password, email, errorEmail, username]);
+
+  const handleSignUp = async (e) => {
     e.preventDefault();
-
     if (!valid) {
-      setErrorEmail("Fix errors before signing up");
+      setErrorEmail("Please fix errors before signing up");
       return;
     }
 
-    const newUser = {
-      id: crypto.randomUUID(), // ✅ Added unique ID here
-      email,
-      username,
-      password,
-      role,
-    };
+    try {
+      await signupUser({ email, password, username, role });
 
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-    localStorage.setItem("loggedInUser", JSON.stringify(newUser));
-    loginUser(newUser);
-    setSignupSuccess(true);
-  }
-
-  useEffect(() => {
-    if (signupSuccess) {
-      if (role === "Seller") {
+      // ← navigate immediately on success:
+      if (role === "seller") {
         navigate("/seller/products");
-      } else if (role === "Admin") {
+      } else if (role === "admin") {
         navigate("/admin/accounts");
       } else {
         navigate("/main");
       }
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setErrorEmail("Email already in use");
+      } else {
+        setErrorEmail(err.message);
+      }
     }
-  }, [signupSuccess, role, navigate]);
+  };
 
   return (
     <div style={styles.pageWrapper}>
       <div style={styles.card}>
         <h2 style={styles.heading}>TechMart</h2>
-        <form onSubmit={signUp}>
+        <form onSubmit={handleSignUp}>
           {errorEmail && <p style={styles.errorText}>{errorEmail}</p>}
 
           <div style={styles.formGroup}>
@@ -128,7 +111,6 @@ function Signup() {
             <input
               style={styles.input}
               type="email"
-              name="email"
               value={email}
               onChange={(e) => checkEmail(e.target.value)}
               required
@@ -140,7 +122,6 @@ function Signup() {
             <input
               style={styles.input}
               type="text"
-              name="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -156,7 +137,6 @@ function Signup() {
               <input
                 style={styles.passwordInput}
                 type={visible ? "text" : "password"}
-                name="password"
                 value={password}
                 placeholder="********"
                 onChange={(e) => checkPassword(e.target.value)}
@@ -164,7 +144,7 @@ function Signup() {
               />
               <button
                 type="button"
-                onClick={() => setVisible(!visible)}
+                onClick={() => setVisible((v) => !v)}
                 style={styles.visibilityButton}
               >
                 <img
@@ -193,7 +173,7 @@ function Signup() {
                   >
                     {req.isValid ? "✓" : "✗"}
                   </span>
-                  <span>{req.text}</span>
+                  {req.text}
                 </li>
               ))}
             </ul>
@@ -213,7 +193,15 @@ function Signup() {
             </select>
           </div>
 
-          <button type="submit" style={styles.submitButton} disabled={!valid}>
+          <button
+            type="submit"
+            style={{
+              ...styles.submitButton,
+              opacity: valid ? 1 : 0.6,
+              cursor: valid ? "pointer" : "not-allowed",
+            }}
+            disabled={!valid}
+          >
             Sign Up
           </button>
         </form>
@@ -221,6 +209,8 @@ function Signup() {
     </div>
   );
 }
+
+// … (styles object remains exactly as you had it)
 
 const styles = {
   pageWrapper: {
@@ -295,7 +285,6 @@ const styles = {
   visibilityIcon: {
     width: "22px",
     height: "22px",
-    color: "#718096",
   },
   errorText: {
     color: "#e53e3e",
@@ -323,5 +312,3 @@ const styles = {
     color: "#4a5568",
   },
 };
-
-export default Signup;

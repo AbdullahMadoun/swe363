@@ -11,8 +11,8 @@ import MyProductsPage from './Seller/pages/MyProductsPage.js';
 import ProtectedRoute from './Seller/components/ProtectedRoute.js'; // Assuming you create this
 
 // Context Providers
-import { UserProvider } from './UserContext.js';
-import { CartProvider } from './CartContext.js';
+import { UserProvider } from './context/UserContext.js';
+import { CartProvider } from './context/CartContext.js';
 import { CompareProvider } from './context/CompareContext.js';
 import { WishlistProvider } from './context/WishlistContext.js';
 import { SellerProvider } from './context/SellerContext.js'; // Import SellerProvider
@@ -32,8 +32,11 @@ import AccountPage from './Admin/AccountPage';
 import PolicyControl from './Admin/PolicyControl';
 import PolicyPage from './Admin/PolicyPage';
 import OrdersPage from './Buyer/OrdersPage.js';
-import ProductDetailPage from './ProductDetailPage.js';
+import ProductDetailPage from './Buyer/ProductDetailsPage.js';
+import { initializeApp } from "firebase/app";
 function App() {
+
+
   return (
     <UserProvider>
       <CartProvider>
@@ -51,7 +54,7 @@ function App() {
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/cart" element={<ShoppingCartPage />} />
 
-                
+                <Route path="/products/:id" element={<ProductDetailPage />} />
                 <Route path="/compare" element={<ComparePage />} />
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/login" element={<LoginPage />} />
