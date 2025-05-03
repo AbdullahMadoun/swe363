@@ -48,7 +48,7 @@ export default function PaymentPage() {
 
       // 3) clear the buyer’s cart
       await clearCart();
-      navigate("/seller/orders"); // or wherever your seller orders page lives
+      navigate("/orders"); // or wherever your seller orders page lives
     } catch (e) {
       console.error("Payment failed:", e);
       alert("Payment could not be processed. Please try again.");
