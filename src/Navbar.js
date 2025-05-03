@@ -136,7 +136,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logoutUser();
-    navigate("/");
+    navigate("/login");
   };
 
   return (
