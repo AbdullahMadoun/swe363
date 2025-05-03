@@ -1,8 +1,7 @@
-// src/components/Navbar.js
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Menu } from 'lucide-react';
 
 import { UserContext } from './context/UserContext';
 import { CartContext } from './context/CartContext';
@@ -14,6 +13,7 @@ const Nav = styled.nav`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 `;
 
 const Logo = styled(Link)`
@@ -30,6 +30,19 @@ const NavList = styled.ul`
   align-items: center;
   margin: 0;
   padding: 0;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    background: white;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    display: ${props => (props.open ? 'flex' : 'none')};
+    padding: 15px 0;
+    border-top: 1px solid #ddd;
+    z-index: 10;
+  }
 `;
 
 const NavLink = styled(Link)`
@@ -37,7 +50,9 @@ const NavLink = styled(Link)`
   text-decoration: none;
   color: #1d1d1f;
   font-weight: 500;
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const CartIconWrapper = styled.div`
@@ -63,42 +78,59 @@ const LogoutButton = styled.button`
   color: #dc3545;
   cursor: pointer;
   font-weight: 600;
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const MenuIcon = styled.div`
+  display: none;
+  cursor: pointer;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
 `;
 
 export default function Navbar() {
   const { logoutUser, user } = useContext(UserContext);
-  const { cart }         = useContext(CartContext);
-  const navigate         = useNavigate();
+  const { cart } = useContext(CartContext);
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleMenu = () => setIsOpen(!isOpen);
 
   const buyerLinks = [
     { to: "/wishlist", label: "Wishlist" },
-    { to: "/policy",   label: "Policy"   },
-    { to: "/orders",   label: "Orders"   },
-    { to: "/compare",   label: "Compare"   },
-
+    { to: "/policy", label: "Policy" },
+    { to: "/orders", label: "Orders" },
+    { to: "/compare", label: "Compare" },
   ];
 
   const sellerLinks = [
-    { to: "/seller/products", label: "My Products"  },
-    { to: "/seller/orders",   label: "Orders"       },
+    { to: "/seller/products", label: "My Products" },
+    { to: "/seller/orders", label: "Orders" },
     { to: "/seller/addproduct", label: "Add Product" },
-    { to: "/policy",           label: "Policy"      },
+    { to: "/policy", label: "Policy" },
   ];
 
   const adminLinks = [
-    { to: "/admin/accounts",      label: "Accounts"       },
+    { to: "/admin/accounts", label: "Accounts" },
     { to: "/admin/policycontrol", label: "Policy Control" },
-    { to: "/policy",              label: "Policy"         },
+    { to: "/policy", label: "Policy" },
   ];
 
   const getRoleLinks = () => {
     if (!user?.role) return [];
     switch (user.role.toLowerCase()) {
-      case "buyer":  return buyerLinks;
-      case "seller": return sellerLinks;
-      case "admin":  return adminLinks;
-      default:       return [];
+      case "buyer":
+        return buyerLinks;
+      case "seller":
+        return sellerLinks;
+      case "admin":
+        return adminLinks;
+      default:
+        return [];
     }
   };
 
@@ -111,34 +143,33 @@ export default function Navbar() {
     <Nav>
       <Logo to={user ? "/main" : "/"}>TechMart</Logo>
 
-      <NavList>
+      <MenuIcon onClick={toggleMenu}>
+        <Menu size={24} />
+      </MenuIcon>
+
+      <NavList open={isOpen}>
         {user && (
           <>
-          
-       
-            {/* Home & Logout */}
             <li><NavLink to="/main">Home</NavLink></li>
-         
-            {/* Then role‐specific links (excluding /cart) */}
+
             {getRoleLinks().map(({ to, label }) => (
               <li key={to}>
                 <NavLink to={to}>{label}</NavLink>
               </li>
             ))}
-            
-            {/* Cart Icon */}
-            {user.role === "Buyer" && (  <li>
-              <NavLink to="/cart">
-                <CartIconWrapper>
-                  <ShoppingCart size={20} />
-                  {cart.length > 0 && <Badge>{cart.length}</Badge>}
-                </CartIconWrapper>
-              </NavLink>
-            </li>) }
-            <li><LogoutButton onClick={handleLogout}>Logout</LogoutButton></li>
 
-          
-         
+            {user.role === "Buyer" && (
+              <li>
+                <NavLink to="/cart">
+                  <CartIconWrapper>
+                    <ShoppingCart size={20} />
+                    {cart.length > 0 && <Badge>{cart.length}</Badge>}
+                  </CartIconWrapper>
+                </NavLink>
+              </li>
+            )}
+
+            <li><LogoutButton onClick={handleLogout}>Logout</LogoutButton></li>
           </>
         )}
 

@@ -20,6 +20,16 @@ export default function MainPage() {
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [sortOrder, setSortOrder] = useState("price-asc");
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     const uniqueBrands = Array.from(
       new Set(items.map((item) => item.brand).filter(Boolean))
@@ -35,10 +45,7 @@ export default function MainPage() {
   useEffect(() => {
     if (items.length > 0) {
       const max = Math.max(
-        ...items.map((item) => {
-          const finalPrice = item.price - (item.price * item.discount) / 100;
-          return finalPrice;
-        })
+        ...items.map((item) => item.price - (item.price * item.discount) / 100)
       );
       setMaxPrice(Math.ceil(max));
       setPriceRange([0, Math.ceil(max)]);
@@ -68,9 +75,7 @@ export default function MainPage() {
   };
 
   const suggestions = [...new Set(
-    items
-      .map((item) => item.title.toLowerCase().split(" "))
-      .flat()
+    items.flatMap((item) => item.title?.toLowerCase().split(" ") || [])
   )]
     .filter(
       (word) =>
@@ -82,27 +87,13 @@ export default function MainPage() {
     const finalPrice = item.price - (item.price * item.discount) / 100;
     const titleLower = item.title?.toString().toLowerCase() || "";
 
-    const matchesKeywords =
-      keywords.length === 0 ||
-      keywords.every((kw) => titleLower.includes(kw));
-
-    const matchesRating = !minRating || item.rating >= 4;
-
-    const matchesBrand =
-      brands.length === 0 || brands.includes(item.brand);
-
-    const matchesSize =
-      sizes.length === 0 || sizes.includes(item.capacity);
-
-    const matchesPrice =
-      finalPrice >= priceRange[0] && finalPrice <= priceRange[1];
-
     return (
-      matchesKeywords &&
-      matchesRating &&
-      matchesBrand &&
-      matchesSize &&
-      matchesPrice
+      (keywords.length === 0 || keywords.every((kw) => titleLower.includes(kw))) &&
+      (!minRating || item.rating >= 4) &&
+      (brands.length === 0 || brands.includes(item.brand)) &&
+      (sizes.length === 0 || sizes.includes(item.capacity)) &&
+      finalPrice >= priceRange[0] &&
+      finalPrice <= priceRange[1]
     );
   });
 
@@ -119,158 +110,154 @@ export default function MainPage() {
     }
   };
 
-  const toggleBrand = (brand) => {
+  const toggleBrand = (brand) =>
     setBrands((prev) =>
-      prev.includes(brand)
-        ? prev.filter((b) => b !== brand)
-        : [...prev, brand]
+      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
     );
-  };
 
-  const toggleSize = (size) => {
+  const toggleSize = (size) =>
     setSizes((prev) =>
-      prev.includes(size)
-        ? prev.filter((s) => s !== size)
-        : [...prev, size]
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
     );
-  };
 
   return (
     <div style={styles.pageWrapper}>
-      <aside style={styles.sidebar}>
-        <h3>Keywords</h3>
-        <input
-          type="text"
-          placeholder="e.g. Ram"
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={(e) => e.key === "Enter" && addKeyword(input)}
-          style={styles.input}
-        />
-        {suggestions.map((s, i) => (
-          <div
-            key={i}
-            onClick={() => addKeyword(s)}
-            style={{
-              cursor: "pointer",
-              fontSize: "0.85rem",
-              color: "#555",
-              padding: "2px 4px",
-            }}
-          >
-            {s}
-          </div>
-        ))}
-        <div
-          style={{
-            marginTop: "10px",
-            display: "flex",
-            gap: "5px",
-            flexWrap: "wrap",
-          }}
-        >
-          {keywords.map((kw) => (
+      {!isMobile && (
+        <aside style={styles.sidebar}>
+          <h3>Keywords</h3>
+          <input
+            type="text"
+            placeholder="e.g. Ram"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={(e) => e.key === "Enter" && addKeyword(input)}
+            style={styles.input}
+          />
+          {suggestions.map((s, i) => (
             <div
-              key={kw}
+              key={i}
+              onClick={() => addKeyword(s)}
               style={{
-                background: "#1d1d1f",
-                color: "#fff",
-                borderRadius: "16px",
-                padding: "4px 10px",
-                fontSize: "0.8rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
+                cursor: "pointer",
+                fontSize: "0.85rem",
+                color: "#555",
+                padding: "2px 4px",
               }}
             >
-              {kw}
-              <button
-                onClick={() => removeKeyword(kw)}
+              {s}
+            </div>
+          ))}
+          <div
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              gap: "5px",
+              flexWrap: "wrap",
+            }}
+          >
+            {keywords.map((kw) => (
+              <div
+                key={kw}
                 style={{
-                  background: "transparent",
-                  border: "none",
+                  background: "#1d1d1f",
                   color: "#fff",
-                  fontWeight: "bold",
+                  borderRadius: "16px",
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                {kw}
+                <button
+                  onClick={() => removeKeyword(kw)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {keywords.length > 0 && (
+              <button
+                onClick={() => setKeywords([])}
+                style={{
+                  backgroundColor: "#eee",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "4px 8px",
+                  fontSize: "0.75rem",
                   cursor: "pointer",
                 }}
               >
-                ×
+                Clear all
               </button>
+            )}
+          </div>
+
+          <div style={styles.checkbox}>
+            <input
+              type="checkbox"
+              checked={minRating}
+              onChange={(e) => setMinRating(e.target.checked)}
+            />
+            <label>4 & Above Rating</label>
+          </div>
+          <div style={styles.checkbox}>
+            <input
+              type="checkbox"
+              checked={freeDelivery}
+              onChange={(e) => setFreeDelivery(e.target.checked)}
+            />
+            <label>Free Delivery</label>
+          </div>
+
+          <label style={{ marginTop: "10px" }}>Price</label>
+          <input
+            type="range"
+            min="0"
+            max={maxPrice}
+            value={priceRange[1]}
+            onChange={(e) =>
+              setPriceRange([0, Number(e.target.value)])
+            }
+            style={{ width: "100%" }}
+          />
+          <div style={{ fontSize: "0.9rem" }}>
+            ${priceRange[0]}–${priceRange[1]}
+          </div>
+
+          <label style={{ marginTop: "10px" }}>Brand</label>
+          {brands.map((brand) => (
+            <div key={brand} style={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={brands.includes(brand)}
+                onChange={() => toggleBrand(brand)}
+              />
+              <label>{brand}</label>
             </div>
           ))}
-          {keywords.length > 0 && (
-            <button
-              onClick={() => setKeywords([])}
-              style={{
-                backgroundColor: "#eee",
-                border: "none",
-                borderRadius: "12px",
-                padding: "4px 8px",
-                fontSize: "0.75rem",
-                cursor: "pointer",
-              }}
-            >
-              Clear all
-            </button>
-          )}
-        </div>
 
-        <div style={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={minRating}
-            onChange={(e) => setMinRating(e.target.checked)}
-          />
-          <label>4 & Above Rating</label>
-        </div>
-        <div style={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={freeDelivery}
-            onChange={(e) => setFreeDelivery(e.target.checked)}
-          />
-          <label>Free Delivery</label>
-        </div>
-
-        <label style={{ marginTop: "10px" }}>Price</label>
-        <input
-          type="range"
-          min="0"
-          max={maxPrice}
-          value={priceRange[1]}
-          onChange={(e) =>
-            setPriceRange([0, Number(e.target.value)])
-          }
-          style={{ width: "100%" }}
-        />
-        <div style={{ fontSize: "0.9rem" }}>
-          ${priceRange[0]}–${priceRange[1]}
-        </div>
-
-        <label style={{ marginTop: "10px" }}>Brand</label>
-        {brands.map((brand) => (
-          <div key={brand} style={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={brands.includes(brand)}
-              onChange={() => toggleBrand(brand)}
-            />
-            <label>{brand}</label>
-          </div>
-        ))}
-
-        <label style={{ marginTop: "10px" }}>Size</label>
-        {sizes.map((size) => (
-          <div key={size} style={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={sizes.includes(size)}
-              onChange={() => toggleSize(size)}
-            />
-            <label>{size}</label>
-          </div>
-        ))}
-      </aside>
+          <label style={{ marginTop: "10px" }}>Size</label>
+          {sizes.map((size) => (
+            <div key={size} style={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={sizes.includes(size)}
+                onChange={() => toggleSize(size)}
+              />
+              <label>{size}</label>
+            </div>
+          ))}
+        </aside>
+      )}
 
       <div style={{ flex: 1 }}>
         <div style={styles.topBar}>
