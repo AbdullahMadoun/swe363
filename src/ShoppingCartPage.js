@@ -47,9 +47,9 @@ export default function ShoppingCartPage() {
             {itemsWithQty.map(({ item, qty }) => {
               const finalPrice = item.price * (1 - item.discount / 100);
               return (
-                <div key={item.id} style={styles.itemCard}>
+                <div key={item.id} style={styles.itemCard}> 
                   <img
-                    src={item.base64image}
+                    src={item.images}
                     alt={item.title}
                     style={styles.image}
                   />
