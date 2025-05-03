@@ -33,6 +33,7 @@ import PolicyControl from './Admin/PolicyControl';
 import PolicyPage from './Admin/PolicyPage';
 import OrdersPage from './Buyer/OrdersPage.js';
 import ProductDetailPage from './Buyer/ProductDetailsPage.js';
+import AutoRedirect from './AutoRedirect.js';
 import { initializeApp } from "firebase/app";
 function App() {
 
@@ -48,7 +49,7 @@ function App() {
               
               <Routes>
                 Buyer Routes
-                <Route path="/" element={<LoginPage  />} />
+                <Route path="/" element={<AutoRedirect />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/main" element={<MainPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
