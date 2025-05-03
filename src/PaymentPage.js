@@ -72,11 +72,11 @@ const PaymentPage = () => {
           <input type="text" placeholder="John Doe" style={styles.input} />
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <div style={styles.formGroup, { flex: 1 }}>
+          <div style={styles.formGroup}>
             <label style={styles.label}>Expiry Date</label>
             <input type="text" placeholder="MM/YY" style={styles.input} />
           </div>
-          <div style={styles.formGroup, { flex: 1 }}>
+          <div style={styles.formGroup}>
             <label style={styles.label}>CVV</label>
             <input type="text" placeholder="CVC" style={styles.input} />
           </div>
