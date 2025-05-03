@@ -95,16 +95,6 @@ npm install firebase
 - *Policy Management*
   Admins can write and publish markdown-formatted site policies.
 
----
-
-### 👥 Team Members
-
-- *Abdullah Madoun* — Developer & Admin Interface
-- *Khalid* — Seller Role Logic
-- *Mohammad* — Buyer Interface & Testing
-
----
-
 ### 🔐 Environment Notes
 
 - Requires Firebase configuration. Set up a Firebase project and add your configuration details (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId) typically in an environment file (e.g., `.env`) or a configuration file (`firebaseConfig.js`).
