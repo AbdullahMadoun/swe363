@@ -1,6 +1,6 @@
 # 💻 Techmart
 
-**Techmart** is a modern e-commerce platform built for technology lovers. It supports multiple user roles including buyers, sellers, and admins. Users can explore, manage, and administrate a wide array of tech products with an intuitive and clean interface. Whether you’re looking to buy components or manage your own product listings, Techmart has you covered.
+**Techmart** is a modern e-commerce platform built for technology lovers. It supports multiple user roles including buyers, sellers, and admins. Users can explore, manage, and administrate a wide array of tech products with an intuitive and clean interface, powered by a Firebase backend. Whether you’re looking to buy components or manage your own product listings, Techmart has you covered.
 
 ---
 
@@ -28,7 +28,7 @@
 - View rendered policy at `/policy`
 
 ### 🖼️ Image Support
-- Product images uploaded as base64
+- Product images uploaded as base64 (stored alongside product data)
 - Previews available before submission
 - Image cards shown on wishlist, cart, and compare pages
 
@@ -43,6 +43,7 @@
 - `lucide-react` – Icon library
 - `react-markdown` – Policy markdown rendering
 - `styled-components` – Scoped and modular styling
+- `firebase` – Backend services (Authentication, Firestore Database, Storage)
 
 ### 📥 Install Dependencies
 
@@ -51,51 +52,61 @@ npm install react-router-dom
 npm install lucide-react
 npm install react-markdown
 npm install styled-components
+npm install firebase
+```
+
+---
+
 ## 🚀 Usage Instructions
 
 ### 🛍️ Buyer Side
 
-- *Browse Products*  
+- *Browse Products*
   From the main page, buyers can filter, sort, and search for tech products.
 
-- *Wishlist*  
+- *Wishlist*
   Save favorite items for later.
 
-- *Shopping Cart*  
+- *Shopping Cart*
   Add items to cart, view total, and proceed to checkout.
 
-- *Payment*  
+- *Payment*
   Enter card details to complete the purchase.
 
-- *View Orders & Submit Reviews*  
+- *View Orders & Submit Reviews*
   Buyers can rate and review products post-delivery.
 
 ### 🛒 Seller Side
 
-- *My Products*  
+- *My Products*
   View and edit your listings.
 
-- *Add Product*  
+- *Add Product*
   Add new listings using the product form.
 
-- *Orders*  
+- *Orders*
   Track orders made for your listed items.
 
 ### ⚙️ Admin Side
 
-- *Accounts Management*  
+- *Accounts Management*
   View, update, or remove user accounts.
 
-- *Policy Management*  
+- *Policy Management*
   Admins can write and publish markdown-formatted site policies.
+
+---
 
 ### 👥 Team Members
 
-- *Abdullah Madoun* — Developer & Admin Interface  
-- *Khalid* — Seller Role Logic  
+- *Abdullah Madoun* — Developer & Admin Interface
+- *Khalid* — Seller Role Logic
 - *Mohammad* — Buyer Interface & Testing
+
+---
 
 ### 🔐 Environment Notes
 
-- No environment variables or external API keys are required.  
-- All user and item data is stored in browser localStorage.
+- Requires Firebase configuration. Set up a Firebase project and add your configuration details (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId) typically in an environment file (e.g., `.env`) or a configuration file (`firebaseConfig.js`).
+- All user, product, and order data is stored and managed using Firebase services (Firestore, Authentication).
+
